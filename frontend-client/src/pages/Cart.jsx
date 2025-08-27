@@ -20,7 +20,7 @@ const Cart = () => {
             Adicione alguns produtos deliciosos ao seu carrinho!
           </p>
           <Link
-            to="/menu"
+            to="/"
             className="bg-primary-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors inline-flex items-center gap-2"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -200,7 +200,7 @@ const Cart = () => {
               )}
               
               <Link
-                to="/menu"
+                to="/"
                 className="w-full bg-gray-200 text-gray-800 py-3 px-6 rounded-lg font-medium hover:bg-gray-300 transition-colors text-center block mt-3"
               >
                 Continuar Comprando
