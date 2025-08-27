@@ -5,7 +5,7 @@ import { useStoreSettings } from '../contexts/StoreSettingsContext'
 import { useState } from 'react'
 
 export default function Header() {
-  const { itemCount } = useCart()
+  const { itemCount, total } = useCart()
   const { settings } = useStoreSettings()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
@@ -52,12 +52,19 @@ export default function Header() {
           {/* Cart Icon */}
           <Link 
             to="/cart" 
-            className="relative p-2 text-gray-700 hover:text-red-600 transition-colors"
+            className="relative flex items-center gap-2 p-2 text-gray-700 hover:text-red-600 transition-colors"
           >
-            <ShoppingCart className="w-6 h-6" />
+            <div className="relative">
+              <ShoppingCart className="w-6 h-6" />
+              {itemCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                  {itemCount > 99 ? '99+' : itemCount}
+                </span>
+              )}
+            </div>
             {itemCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
-                {itemCount > 99 ? '99+' : itemCount}
+              <span className="hidden sm:block text-sm font-medium">
+                R$ {total.toFixed(2)}
               </span>
             )}
           </Link>
@@ -87,7 +94,7 @@ export default function Header() {
                 className="text-gray-700 hover:text-red-600 transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Carrinho ({itemCount})
+                Carrinho ({itemCount}) {itemCount > 0 && `- R$ ${total.toFixed(2)}`}
               </Link>
               <Link 
                 to="/order-history" 

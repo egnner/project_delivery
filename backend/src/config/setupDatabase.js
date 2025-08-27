@@ -14,11 +14,19 @@ const createTables = async () => {
         name TEXT NOT NULL UNIQUE,
         description TEXT,
         image_url TEXT,
+        icon TEXT DEFAULT 'Utensils',
         active BOOLEAN DEFAULT 1,
         created_at DATETIME,
         updated_at DATETIME
       )
     `);
+
+    // Adicionar coluna icon se não existir (migração)
+    try {
+      await runCommand(`ALTER TABLE categories ADD COLUMN icon TEXT DEFAULT 'Utensils'`);
+    } catch (error) {
+      // Coluna já existe, ignorar erro
+    }
 
     // Tabela de produtos
     await runCommand(`

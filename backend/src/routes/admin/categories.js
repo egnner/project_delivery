@@ -92,7 +92,18 @@ router.get('/:id', async (req, res) => {
 router.post('/', [
   body('name').notEmpty().withMessage('Nome da categoria é obrigatório'),
   body('description').optional().isString(),
-  body('image_url').optional().isURL().withMessage('URL da imagem deve ser válida')
+  body('image_url').optional().custom((value) => {
+    // Permitir string vazia ou null
+    if (!value || value.trim() === '') {
+      return true;
+    }
+    // Validar URL apenas se não for vazia
+    if (!value.match(/^https?:\/\/.+/)) {
+      throw new Error('URL da imagem deve ser válida');
+    }
+    return true;
+  }),
+  body('icon').optional().isString().withMessage('Ícone deve ser uma string')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -103,7 +114,7 @@ router.post('/', [
       });
     }
 
-    const { name, description, image_url } = req.body;
+    const { name, description, image_url, icon } = req.body;
     
     // Verificar se já existe categoria com o mesmo nome
     const existingCategory = await getOne('SELECT id FROM categories WHERE name = ?', [name]);
@@ -115,9 +126,9 @@ router.post('/', [
     }
     
     const result = await runCommand(`
-      INSERT INTO categories (name, description, image_url)
-      VALUES (?, ?, ?)
-    `, [name, description, image_url]);
+      INSERT INTO categories (name, description, image_url, icon)
+      VALUES (?, ?, ?, ?)
+    `, [name, description, image_url, icon || 'Utensils']);
     
     const newCategory = await getOne(`
       SELECT c.*, COUNT(p.id) as product_count
@@ -146,7 +157,18 @@ router.post('/', [
 router.put('/:id', [
   body('name').optional().notEmpty().withMessage('Nome da categoria não pode ser vazio'),
   body('description').optional().isString(),
-  body('image_url').optional().isURL().withMessage('URL da imagem deve ser válida')
+  body('image_url').optional().custom((value) => {
+    // Permitir string vazia ou null
+    if (!value || value.trim() === '') {
+      return true;
+    }
+    // Validar URL apenas se não for vazia
+    if (!value.match(/^https?:\/\/.+/)) {
+      throw new Error('URL da imagem deve ser válida');
+    }
+    return true;
+  }),
+  body('icon').optional().isString().withMessage('Ícone deve ser uma string')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -158,7 +180,7 @@ router.put('/:id', [
     }
 
     const { id } = req.params;
-    const { name, description, image_url, active } = req.body;
+    const { name, description, image_url, active, icon } = req.body;
     
     // Verificar se a categoria existe
     const existingCategory = await getOne('SELECT * FROM categories WHERE id = ?', [id]);
@@ -200,6 +222,10 @@ router.put('/:id', [
       updates.push('active = ?');
       params.push(active);
     }
+    if (icon !== undefined) {
+      updates.push('icon = ?');
+      params.push(icon);
+    }
     
     updates.push('updated_at = ?');
     
@@ -235,9 +261,12 @@ router.put('/:id', [
     
   } catch (error) {
     console.error('Erro ao atualizar categoria:', error);
+    console.error('Stack trace:', error.stack);
+    console.error('Parâmetros:', { id: req.params.id, body: req.body });
     res.status(500).json({ 
       error: 'Erro interno do servidor',
-      message: 'Não foi possível atualizar a categoria'
+      message: 'Não foi possível atualizar a categoria',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });

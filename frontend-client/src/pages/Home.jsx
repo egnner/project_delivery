@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, ShoppingCart, Clock, Star, ChevronDown } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Search, Plus, ShoppingCart, Clock, Star, Package, Coffee, Utensils, Cookie } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useStoreSettings } from '../contexts/StoreSettingsContext';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -10,7 +11,7 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const { addToCart, cartItems } = useCart();
+  const { addToCart, items: cartItems } = useCart();
   const { settings, formatOpeningHours, isStoreOpen } = useStoreSettings();
 
   useEffect(() => {
@@ -52,81 +53,102 @@ const Home = () => {
       id: product.id,
       name: product.name,
       price: product.price,
-      image: product.image,
+      image_url: product.image_url || product.image,
       quantity: 1
     });
   };
 
   const getCartItemQuantity = (productId) => {
+    if (!cartItems || !Array.isArray(cartItems)) return 0;
     const item = cartItems.find(item => item.id === productId);
     return item ? item.quantity : 0;
   };
 
   const getTotalCartItems = () => {
+    if (!cartItems || !Array.isArray(cartItems)) return 0;
     return cartItems.reduce((total, item) => total + item.quantity, 0);
   };
 
   if (loading) {
     return <LoadingSpinner />;
   }
-
+  
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Layout estilo iFood */}
       <div className="flex">
-        {/* Sidebar de Categorias - Fixo na direita em desktop */}
-        <div className="hidden lg:block w-80 bg-white shadow-lg fixed right-0 top-16 h-screen overflow-y-auto z-40">
+        {/* Sidebar de Categorias - Fixo na esquerda em desktop */}
+        <div className="hidden lg:block w-80 bg-white shadow-lg fixed left-0 top-16 h-screen overflow-y-auto z-40">
           <div className="p-6">
             <h3 className="font-bold text-lg mb-4 text-gray-800">Categorias</h3>
             <div className="space-y-2">
               <button
                 onClick={() => setSelectedCategory('')}
-                className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center gap-3 ${
                   !selectedCategory 
                     ? 'bg-red-500 text-white' 
                     : 'hover:bg-gray-100 text-gray-700'
                 }`}
               >
-                🍽️ Todos os produtos
+                <Package className="w-5 h-5" />
+                Todos os produtos
               </button>
-              {categories.map(category => (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.name)}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                    selectedCategory === category.name 
-                      ? 'bg-red-500 text-white' 
-                      : 'hover:bg-gray-100 text-gray-700'
-                  }`}
-                >
-                  {category.emoji || '🍴'} {category.name}
-                </button>
-              ))}
+              {categories.map(category => {
+                const getIconForCategory = (iconName) => {
+                  switch(iconName) {
+                    case 'Pizza': return <Utensils className="w-5 h-5" />;
+                    case 'Coffee': return <Coffee className="w-5 h-5" />;
+                    case 'Cookie': return <Cookie className="w-5 h-5" />;
+                    case 'Wine': return <Coffee className="w-5 h-5" />;
+                    case 'Sandwich': return <Utensils className="w-5 h-5" />;
+                    case 'IceCream': return <Cookie className="w-5 h-5" />;
+                    case 'Soup': return <Utensils className="w-5 h-5" />;
+                    case 'Cake': return <Cookie className="w-5 h-5" />;
+                    case 'Package': return <Package className="w-5 h-5" />;
+                    default: return <Utensils className="w-5 h-5" />;
+                  }
+                };
+
+                return (
+                  <button
+                    key={category.id}
+                    onClick={() => setSelectedCategory(category.name)}
+                    className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center gap-3 ${
+                      selectedCategory === category.name 
+                        ? 'bg-red-500 text-white' 
+                        : 'hover:bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    {getIconForCategory(category.icon)}
+                    {category.name}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Informações da Loja */}
             <div className="mt-8 p-4 bg-gray-50 rounded-lg">
               <div className="text-center">
-                {settings.store_logo ? (
-                  <img 
-                    src={settings.store_logo} 
-                    alt={`Logo ${settings.store_name}`}
+             {settings.store_logo ? (
+               <img 
+                 src={settings.store_logo} 
+                 alt={`Logo ${settings.store_name}`}
                     className="w-16 h-16 mx-auto mb-3 object-contain rounded-full"
-                  />
-                ) : (
+               />
+             ) : (
                   <div className="w-16 h-16 mx-auto mb-3 bg-red-500 rounded-full flex items-center justify-center">
-                    <span className="text-2xl text-white">🍕</span>
+                    <Utensils className="w-8 h-8 text-white" />
                   </div>
                 )}
                 <h4 className="font-bold text-gray-800">{settings.store_name}</h4>
                 <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium mt-2 ${
-                  isStoreOpen() 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-red-100 text-red-800'
-                }`}>
-                  <div className={`w-2 h-2 rounded-full ${
-                    isStoreOpen() ? 'bg-green-500' : 'bg-red-500'
-                  }`}></div>
+                isStoreOpen() 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-red-100 text-red-800'
+              }`}>
+                <div className={`w-2 h-2 rounded-full ${
+                  isStoreOpen() ? 'bg-green-500' : 'bg-red-500'
+                }`}></div>
                   {isStoreOpen() ? 'Aberto' : 'Fechado'}
                 </div>
                 <p className="text-xs text-gray-600 mt-1">
@@ -138,7 +160,7 @@ const Home = () => {
         </div>
 
         {/* Conteúdo Principal */}
-        <div className="flex-1 lg:mr-80">
+        <div className="flex-1 lg:ml-80">
           {/* Header Mobile com Categorias */}
           <div className="lg:hidden bg-white shadow-sm sticky top-16 z-30">
             <div className="p-4">
@@ -168,7 +190,7 @@ const Home = () => {
                 ))}
               </div>
             </div>
-          </div>
+              </div>
 
           {/* Barra de Busca */}
           <div className="bg-white shadow-sm border-b">
@@ -192,7 +214,7 @@ const Home = () => {
               <div className="mb-6">
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">
                   {selectedCategory || 'Todos os produtos'}
-                </h2>
+          </h2>
                 <p className="text-gray-600">
                   {filteredProducts.length} produto(s) encontrado(s)
                 </p>
@@ -204,21 +226,26 @@ const Home = () => {
                 <div key={product.id} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100">
                   {/* Imagem do Produto */}
                   <div className="aspect-video bg-gray-100 rounded-t-lg overflow-hidden">
-                    {product.image ? (
+                    {product.image_url || product.image ? (
                       <img 
-                        src={product.image} 
+                        src={product.image_url || product.image} 
                         alt={product.name}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
                       />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <span className="text-4xl">🍽️</span>
-                      </div>
-                    )}
-                  </div>
+                    ) : null}
+                    <div className={`w-full h-full flex items-center justify-center ${
+                      (product.image_url || product.image) ? 'hidden' : 'flex'
+                    }`}>
+                      <Package className="w-12 h-12 text-gray-400" />
+            </div>
+              </div>
 
                   {/* Informações do Produto */}
-                  <div className="p-4">
+              <div className="p-4">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-semibold text-gray-800 text-lg leading-tight">
                         {product.name}
@@ -256,16 +283,16 @@ const Home = () => {
                         >
                           <Plus className="w-5 h-5" />
                         </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              </div>
+            </div>
+              </div>
+              </div>
               ))}
             </div>
 
             {filteredProducts.length === 0 && (
               <div className="text-center py-12">
-                <div className="text-6xl mb-4">🍽️</div>
+                <Package className="w-16 h-16 mx-auto mb-4 text-gray-400" />
                 <h3 className="text-xl font-medium text-gray-600 mb-2">
                   Nenhum produto encontrado
                 </h3>
@@ -278,21 +305,7 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Botão Carrinho Flutuante */}
-      {getTotalCartItems() > 0 && (
-        <button
-          onClick={() => window.location.href = '/cart'}
-          className="fixed bottom-6 left-6 bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-3 transition-colors z-50"
-        >
-          <ShoppingCart className="w-5 h-5" />
-          <span className="font-medium">
-            {getTotalCartItems()} item(s)
-          </span>
-          <span className="bg-red-600 px-2 py-1 rounded-full text-sm">
-            R$ {cartItems.reduce((total, item) => total + (item.price * item.quantity), 0).toFixed(2)}
-          </span>
-        </button>
-      )}
+
     </div>
   );
 };

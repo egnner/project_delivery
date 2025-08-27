@@ -6,7 +6,6 @@ import Header from './components/Header'
 import Footer from './components/Footer'
 import PageTitle from './components/PageTitle'
 import Home from './pages/Home'
-import Menu from './pages/Menu'
 import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
 import OrderStatus from './pages/OrderStatus'
@@ -39,7 +38,6 @@ function App() {
           <main className="flex-1">
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/menu" element={<Menu />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/order/:id" element={<OrderStatus />} />

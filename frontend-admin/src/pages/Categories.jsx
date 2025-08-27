@@ -5,7 +5,16 @@ import {
   Trash2, 
   Search, 
   Tag,
-  Package
+  Package,
+  Utensils,
+  Coffee,
+  Cookie,
+  Wine,
+  Pizza,
+  Sandwich,
+  IceCream,
+  Soup,
+  Cake
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { api } from '../config/api';
@@ -19,8 +28,30 @@ const Categories = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    active: true
+    active: true,
+    icon: 'Utensils'
   });
+
+  // Ícones disponíveis para categorias
+  const availableIcons = {
+    'Utensils': { component: Utensils, name: 'Utensílios' },
+    'Pizza': { component: Pizza, name: 'Pizza' },
+    'Coffee': { component: Coffee, name: 'Café/Bebidas' },
+    'Cookie': { component: Cookie, name: 'Biscoito/Doces' },
+    'Wine': { component: Wine, name: 'Vinho/Bebidas' },
+    'Sandwich': { component: Sandwich, name: 'Sanduíche' },
+    'IceCream': { component: IceCream, name: 'Sorvete' },
+    'Soup': { component: Soup, name: 'Sopa' },
+    'Cake': { component: Cake, name: 'Bolo' },
+    'Package': { component: Package, name: 'Acompanhamentos' },
+    'Tag': { component: Tag, name: 'Genérico' }
+  };
+
+  // Função para renderizar o ícone
+  const renderIcon = (iconName, className = "w-5 h-5") => {
+    const IconComponent = availableIcons[iconName]?.component || Utensils;
+    return <IconComponent className={className} />;
+  };
 
   useEffect(() => {
     fetchData();
@@ -99,7 +130,8 @@ const Categories = () => {
     setFormData({
       name: category.name,
       description: category.description || '',
-      active: category.active
+      active: category.active,
+      icon: category.icon || 'Utensils'
     });
     setShowModal(true);
   };
@@ -131,7 +163,8 @@ const Categories = () => {
     setFormData({
       name: '',
       description: '',
-      active: true
+      active: true,
+      icon: 'Utensils'
     });
   };
 
@@ -207,7 +240,7 @@ const Categories = () => {
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
-                  <Tag className="w-5 h-5 text-primary-600" />
+                  {renderIcon(category.icon, "w-5 h-5 text-primary-600")}
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800">
@@ -300,6 +333,29 @@ const Categories = () => {
                     rows="3"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Ícone da Categoria
+                  </label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {Object.entries(availableIcons).map(([iconKey, iconData]) => (
+                      <button
+                        key={iconKey}
+                        type="button"
+                        onClick={() => setFormData({...formData, icon: iconKey})}
+                        className={`p-3 rounded-lg border-2 transition-colors flex flex-col items-center gap-1 ${
+                          formData.icon === iconKey
+                            ? 'border-primary-500 bg-primary-50 text-primary-600'
+                            : 'border-gray-200 hover:border-gray-300 text-gray-500'
+                        }`}
+                      >
+                        {renderIcon(iconKey, "w-6 h-6")}
+                        <span className="text-xs font-medium">{iconData.name}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="flex items-center">
