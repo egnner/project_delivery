@@ -15,6 +15,7 @@ import LoadingSpinner from './components/LoadingSpinner'
 
 function App() {
   const [isLoading, setIsLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
     // Simular carregamento inicial
@@ -34,10 +35,10 @@ function App() {
       <CartProvider>
         <PageTitle />
         <div className="min-h-screen bg-gray-50 flex flex-col">
-          <Header />
+          <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
           <main className="flex-1">
             <Routes>
-              <Route path="/" element={<Home />} />
+              <Route path="/" element={<Home searchTerm={searchTerm} />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/order/:id" element={<OrderStatus />} />
