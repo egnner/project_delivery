@@ -1,0 +1,27 @@
+{
+  "name": "delivery-system",
+  "version": "1.0.0",
+  "description": "Sistema de delivery com frontend cliente, admin e backend",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:client\" \"npm run dev:admin\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:client": "cd frontend-client && npm run dev",
+    "dev:admin": "cd frontend-admin && npm run dev",
+    "build": "npm run build:client && npm run build:admin",
+    "build:client": "cd frontend-client && npm run build",
+    "build:admin": "cd frontend-admin && npm run build",
+    "start": "cd backend && npm start",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend-client && npm install && cd ../frontend-admin && npm install",
+    "setup": "npm run install:all && npm run setup:db",
+    "setup:db": "cd backend && npm run setup:db",
+    "docker:build": "docker build -t delivery-system .",
+    "docker:run": "docker run -p 3000:3000 -p 3001:3001 -p 3002:3002 delivery-system"
+  },
+  "keywords": ["delivery", "food", "restaurant", "ecommerce"],
+  "author": "Seu Nome",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

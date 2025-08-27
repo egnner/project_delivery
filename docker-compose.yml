@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # Backend API
+  backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: delivery-backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app/backend
+      - ./backend/database:/app/backend/database
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - JWT_SECRET=dev_secret_key_123
+    command: sh -c "cd backend && npm run dev"
+    networks:
+      - delivery-network
+
+  # Frontend Cliente
+  frontend-client:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: delivery-client
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./frontend-client:/app/frontend-client
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:3000
+    command: sh -c "cd frontend-client && npm run dev -- --host 0.0.0.0"
+    networks:
+      - delivery-network
+    depends_on:
+      - backend
+
+  # Frontend Admin
+  frontend-admin:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: delivery-admin
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./frontend-admin:/app/frontend-admin
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:3000
+    command: sh -c "cd frontend-admin && npm run dev -- --host 0.0.0.0"
+    networks:
+      - delivery-network
+    depends_on:
+      - backend
+
+networks:
+  delivery-network:
+    driver: bridge
+
+volumes:
+  database-data:
