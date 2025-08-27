@@ -129,29 +129,17 @@ const Home = () => {
               })}
             </div>
 
-            {/* Informações da Loja */}
+            {/* Status da Loja */}
             <div className="mt-8 p-4 bg-gray-50 rounded-lg">
               <div className="text-center">
-             {settings.store_logo ? (
-               <img 
-                 src={settings.store_logo} 
-                 alt={`Logo ${settings.store_name}`}
-                    className="w-16 h-16 mx-auto mb-3 object-contain rounded-full"
-               />
-             ) : (
-                  <div className="w-16 h-16 mx-auto mb-3 bg-red-500 rounded-full flex items-center justify-center">
-                    <Utensils className="w-8 h-8 text-white" />
-                  </div>
-                )}
-                <h4 className="font-bold text-gray-800">{settings.store_name}</h4>
-                <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium mt-2 ${
-                isStoreOpen() 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-red-100 text-red-800'
-              }`}>
-                <div className={`w-2 h-2 rounded-full ${
-                  isStoreOpen() ? 'bg-green-500' : 'bg-red-500'
-                }`}></div>
+                <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${
+                  isStoreOpen() 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full ${
+                    isStoreOpen() ? 'bg-green-500' : 'bg-red-500'
+                  }`}></div>
                   {isStoreOpen() ? 'Aberto' : 'Fechado'}
                 </div>
                 <p className="text-xs text-gray-600 mt-1">
