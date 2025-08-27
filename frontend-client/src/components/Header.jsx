@@ -37,38 +37,26 @@ export default function Header() {
           <nav className="hidden md:flex items-center space-x-8">
             <Link 
               to="/" 
-              className="text-gray-700 hover:text-primary-600 transition-colors font-medium"
+              className="text-gray-700 hover:text-red-600 transition-colors font-medium"
             >
               Início
             </Link>
             <Link 
-              to="/menu" 
-              className="text-gray-700 hover:text-primary-600 transition-colors font-medium"
-            >
-              Cardápio
-            </Link>
-            <Link 
               to="/order-history" 
-              className="text-gray-700 hover:text-primary-600 transition-colors font-medium"
+              className="text-gray-700 hover:text-red-600 transition-colors font-medium"
             >
               Meus Pedidos
-            </Link>
-            <Link 
-              to="/cart" 
-              className="text-gray-700 hover:text-primary-600 transition-colors font-medium"
-            >
-              Carrinho
             </Link>
           </nav>
 
           {/* Cart Icon */}
           <Link 
             to="/cart" 
-            className="relative p-2 text-gray-700 hover:text-primary-600 transition-colors"
+            className="relative p-2 text-gray-700 hover:text-red-600 transition-colors"
           >
             <ShoppingCart className="w-6 h-6" />
             {itemCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-primary-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
                 {itemCount > 99 ? '99+' : itemCount}
               </span>
             )}
@@ -77,7 +65,7 @@ export default function Header() {
           {/* Mobile menu button */}
           <button
             onClick={toggleMobileMenu}
-            className="md:hidden p-2 text-gray-700 hover:text-primary-600 transition-colors"
+            className="md:hidden p-2 text-gray-700 hover:text-red-600 transition-colors"
           >
             {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -89,28 +77,21 @@ export default function Header() {
             <nav className="flex flex-col space-y-4">
               <Link 
                 to="/" 
-                className="text-gray-700 hover:text-primary-600 transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
+                className="text-gray-700 hover:text-red-600 transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Início
               </Link>
               <Link 
-                to="/menu" 
-                className="text-gray-700 hover:text-primary-600 transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Cardápio
-              </Link>
-              <Link 
                 to="/cart" 
-                className="text-gray-700 hover:text-primary-600 transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
+                className="text-gray-700 hover:text-red-600 transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Carrinho ({itemCount})
               </Link>
               <Link 
                 to="/order-history" 
-                className="text-gray-700 hover:text-primary-600 transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
+                className="text-gray-700 hover:text-red-600 transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Meus Pedidos
