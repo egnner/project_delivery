@@ -49,6 +49,7 @@ app.use('/api/admin/categories', require('./routes/admin/categories'));
 app.use('/api/admin/orders', require('./routes/admin/orders'));
 app.use('/api/admin/settings', require('./routes/admin/settings'));
 app.use('/api/admin/customers', require('./routes/admin/customers'));
+app.use('/api/admin/reports', require('./routes/admin/reports'));
 app.use('/api/auth', require('./routes/auth'));
 
 // Middleware de erro

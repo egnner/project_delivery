@@ -25,6 +25,7 @@ import {
   ArrowDownRight,
   RefreshCw
 } from 'lucide-react';
+import { api } from '../config/api';
 import { 
   LineChart, 
   Line, 
@@ -90,21 +91,17 @@ const Reports = () => {
   const fetchReportData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('adminToken');
       
       // Buscar dados de relatórios
-      const response = await fetch(`http://localhost:3000/api/admin/reports?days=${dateRange}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await api.get(`/api/admin/reports?days=${dateRange}`);
       
-      if (response.ok) {
+      if (response && response.ok) {
         const data = await response.json();
+        console.log('📊 Dados de relatórios recebidos:', data.data);
         setReportData(data.data || {});
       } else {
-        console.log('Relatórios não implementados ainda, usando dados mock');
-        // Dados mock bem completos para demonstração
+        console.error('Erro ao buscar relatórios:', response?.status || 'Erro desconhecido');
+        // Fallback para dados mock em caso de erro
         setReportData({
           totalOrders: 156,
           totalRevenue: 8750.80,
