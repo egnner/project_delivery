@@ -6,11 +6,9 @@ import {
   Clock, 
   Phone, 
   MapPin, 
-  FileText,
   Image as ImageIcon,
   Truck,
-  Search,
-  Eye
+  Search
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useViaCEP } from '../hooks/useViaCEP';
@@ -39,16 +37,12 @@ const Settings = () => {
       saturday: { open: '09:00', close: '23:00', closed: false },
       sunday: { open: '10:00', close: '22:00', closed: false }
     },
-    about_us: '',
     delivery_info: '',
     delivery_enabled: true,
     pickup_enabled: true,
     min_order_amount: 0,
     delivery_fee: 0,
-    free_delivery_threshold: 0,
-    show_phone: true,
-    show_email: true,
-    show_address: true
+    free_delivery_threshold: 0
   });
 
   useEffect(() => {
@@ -430,60 +424,7 @@ const Settings = () => {
             </div>
           </div>
 
-          {/* Controles de Visibilidade */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Eye className="w-5 h-5 text-primary-600" />
-              Controles de Visibilidade
-            </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Configure quais informações serão exibidas no site público
-            </p>
-            
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="show_phone"
-                  name="show_phone"
-                  checked={formData.show_phone}
-                  onChange={(e) => setFormData(prev => ({ ...prev, show_phone: e.target.checked }))}
-                  className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2"
-                />
-                <label htmlFor="show_phone" className="text-sm font-medium text-gray-700">
-                  Exibir telefone no site público
-                </label>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="show_email"
-                  name="show_email"
-                  checked={formData.show_email}
-                  onChange={(e) => setFormData(prev => ({ ...prev, show_email: e.target.checked }))}
-                  className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2"
-                />
-                <label htmlFor="show_email" className="text-sm font-medium text-gray-700">
-                  Exibir email no site público
-                </label>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="show_address"
-                  name="show_address"
-                  checked={formData.show_address}
-                  onChange={(e) => setFormData(prev => ({ ...prev, show_address: e.target.checked }))}
-                  className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2"
-                />
-                <label htmlFor="show_address" className="text-sm font-medium text-gray-700">
-                  Exibir endereço no site público
-                </label>
-              </div>
-            </div>
-          </div>
+
 
           {/* Horário de Funcionamento */}
           <div className="bg-white rounded-lg shadow-md p-6">
@@ -633,27 +574,7 @@ const Settings = () => {
             </div>
           </div>
 
-          {/* Sobre Nós */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-              <FileText className="w-5 h-5 text-primary-600" />
-              Sobre a Loja
-            </h2>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Sobre Nós
-              </label>
-              <textarea
-                name="about_us"
-                value={formData.about_us}
-                onChange={handleInputChange}
-                rows="5"
-                placeholder="Conte a história da sua loja, seus valores, missão..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </div>
-          </div>
+
 
           {/* Botão Salvar */}
           <div className="flex justify-end">
