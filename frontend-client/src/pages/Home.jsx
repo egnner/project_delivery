@@ -218,8 +218,8 @@ const Home = () => {
 
           {/* Barra de Busca */}
           <div className="bg-white shadow-sm border-b">
-            <div className="container mx-auto px-4 py-4">
-              <div className="relative max-w-md">
+            <div className="flex justify-center py-4 px-4">
+              <div className="relative w-full max-w-lg">
                 <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
