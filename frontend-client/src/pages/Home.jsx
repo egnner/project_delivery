@@ -76,7 +76,7 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Layout estilo iFood */}
-      <div className="flex">
+      <div className="flex h-screen">
                  {/* Sidebar de Categorias - Fixo na esquerda em desktop */}
          <div className="hidden lg:block w-80 bg-white shadow-xl fixed left-0 top-16 h-screen z-40 border-r border-gray-100">
            <div className="p-4 h-full flex flex-col">
@@ -206,11 +206,28 @@ const Home = () => {
                  </div>
                </div>
              )}
+
+             {/* Footer dentro do menu lateral */}
+             <div className="mt-auto pt-4 border-t border-gray-200">
+               <div className="text-center">
+                 <p className="text-gray-500 text-xs">
+                   © 2024 Loja Teste. Desenvolvido com ❤️ por{' '}
+                   <a 
+                     href="https://www.linkedin.com/in/egnner/" 
+                     target="_blank" 
+                     rel="noopener noreferrer"
+                     className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200 hover:underline"
+                   >
+                     Egnner Bruno
+                   </a>
+                 </p>
+               </div>
+             </div>
           </div>
         </div>
 
         {/* Conteúdo Principal */}
-        <div className="flex-1 lg:ml-80">
+        <div className="flex-1 lg:ml-80 h-full overflow-y-auto">
           {/* Header Mobile com Categorias */}
           <div className="lg:hidden bg-white shadow-sm sticky top-16 z-30">
             <div className="px-6 py-4">
