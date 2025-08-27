@@ -42,7 +42,8 @@ const Settings = () => {
     pickup_enabled: true,
     min_order_amount: 0,
     delivery_fee: 0,
-    free_delivery_threshold: 0
+    free_delivery_threshold: 0,
+    show_contact_info: true
   });
 
   useEffect(() => {
@@ -424,7 +425,32 @@ const Settings = () => {
             </div>
           </div>
 
-
+          {/* Controles de Visibilidade */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Search className="w-5 h-5 text-primary-600" />
+              Controles de Visibilidade
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Configure quais informações serão exibidas no site público
+            </p>
+            
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="show_contact_info"
+                  name="show_contact_info"
+                  checked={formData.show_contact_info}
+                  onChange={(e) => setFormData(prev => ({ ...prev, show_contact_info: e.target.checked }))}
+                  className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2"
+                />
+                <label htmlFor="show_contact_info" className="text-sm font-medium text-gray-700">
+                  Exibir endereço e dados de contato no menu lateral
+                </label>
+              </div>
+            </div>
+          </div>
 
           {/* Horário de Funcionamento */}
           <div className="bg-white rounded-lg shadow-md p-6">

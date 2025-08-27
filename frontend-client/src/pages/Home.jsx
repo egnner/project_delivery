@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Plus, ShoppingCart, Clock, Star, Package, Coffee, Utensils, Cookie, Pizza, Wine, Sandwich, IceCream, Soup, Cake } from 'lucide-react';
+import { Search, Plus, ShoppingCart, Clock, Star, Package, Coffee, Utensils, Cookie, Pizza, Wine, Sandwich, IceCream, Soup, Cake, Phone, Mail, MapPin } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useStoreSettings } from '../contexts/StoreSettingsContext';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -147,6 +147,39 @@ const Home = () => {
                 </p>
               </div>
             </div>
+
+            {/* Informações de Contato */}
+            {settings.show_contact_info && (
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-800 mb-3">Informações de Contato</h4>
+                
+                {settings.contact_phone && (
+                  <div className="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                    <Phone className="w-3 h-3" />
+                    <span>{settings.contact_phone}</span>
+                  </div>
+                )}
+                
+                {settings.contact_email && (
+                  <div className="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                    <Mail className="w-3 h-3" />
+                    <span>{settings.contact_email}</span>
+                  </div>
+                )}
+                
+                {settings.address && (
+                  <div className="flex items-start gap-2 text-xs text-gray-600">
+                    <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div>{settings.address}, {settings.number}</div>
+                      {settings.neighborhood && <div>{settings.neighborhood}</div>}
+                      <div>{settings.city} - {settings.state}</div>
+                      {settings.zip_code && <div>CEP: {settings.zip_code}</div>}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

@@ -50,6 +50,13 @@ const createTables = async () => {
       // Coluna já existe, ignorar erro
     }
 
+    // Adicionar coluna show_contact_info se não existir (migração)
+    try {
+      await runCommand(`ALTER TABLE store_settings ADD COLUMN show_contact_info BOOLEAN DEFAULT 1`);
+    } catch (error) {
+      // Coluna já existe, ignorar erro
+    }
+
     // Tabela de produtos
     await runCommand(`
       CREATE TABLE IF NOT EXISTS products (
@@ -157,6 +164,7 @@ const createTables = async () => {
         show_phone BOOLEAN DEFAULT 1,
         show_email BOOLEAN DEFAULT 1,
         show_address BOOLEAN DEFAULT 1,
+        show_contact_info BOOLEAN DEFAULT 1,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
