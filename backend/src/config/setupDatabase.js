@@ -16,6 +16,9 @@ const createTables = async () => {
         image_url TEXT,
         icon TEXT DEFAULT 'Utensils',
         active BOOLEAN DEFAULT 1,
+        prep_time_min INTEGER DEFAULT 25,
+        prep_time_max INTEGER DEFAULT 35,
+        show_prep_time BOOLEAN DEFAULT 1,
         created_at DATETIME,
         updated_at DATETIME
       )
@@ -24,6 +27,25 @@ const createTables = async () => {
     // Adicionar coluna icon se não existir (migração)
     try {
       await runCommand(`ALTER TABLE categories ADD COLUMN icon TEXT DEFAULT 'Utensils'`);
+    } catch (error) {
+      // Coluna já existe, ignorar erro
+    }
+
+    // Adicionar colunas de tempo de preparo se não existirem (migração)
+    try {
+      await runCommand(`ALTER TABLE categories ADD COLUMN prep_time_min INTEGER DEFAULT 25`);
+    } catch (error) {
+      // Coluna já existe, ignorar erro
+    }
+
+    try {
+      await runCommand(`ALTER TABLE categories ADD COLUMN prep_time_max INTEGER DEFAULT 35`);
+    } catch (error) {
+      // Coluna já existe, ignorar erro
+    }
+
+    try {
+      await runCommand(`ALTER TABLE categories ADD COLUMN show_prep_time BOOLEAN DEFAULT 1`);
     } catch (error) {
       // Coluna já existe, ignorar erro
     }

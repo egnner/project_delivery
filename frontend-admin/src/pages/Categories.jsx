@@ -14,7 +14,10 @@ import {
   Sandwich,
   IceCream,
   Soup,
-  Cake
+  Cake,
+  ChevronDown,
+  Check,
+  Clock
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { api } from '../config/api';
@@ -25,6 +28,7 @@ const Categories = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [showIconDropdown, setShowIconDropdown] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -131,7 +135,10 @@ const Categories = () => {
       name: category.name,
       description: category.description || '',
       active: category.active,
-      icon: category.icon || 'Utensils'
+      icon: category.icon || 'Utensils',
+      prep_time_min: category.prep_time_min || 25,
+      prep_time_max: category.prep_time_max || 35,
+      show_prep_time: category.show_prep_time !== undefined ? category.show_prep_time : true
     });
     setShowModal(true);
   };
@@ -164,7 +171,10 @@ const Categories = () => {
       name: '',
       description: '',
       active: true,
-      icon: 'Utensils'
+      icon: 'Utensils',
+      prep_time_min: 25,
+      prep_time_max: 35,
+      show_prep_time: true
     });
   };
 
@@ -177,6 +187,7 @@ const Categories = () => {
   const closeModal = () => {
     setShowModal(false);
     setEditingCategory(null);
+    setShowIconDropdown(false);
     resetForm();
   };
 
@@ -234,9 +245,9 @@ const Categories = () => {
       </div>
 
       {/* Lista de Categorias */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
         {filteredCategories.map((category) => (
-          <div key={category.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+          <div key={category.id} className="bg-white rounded-lg shadow-md p-4 lg:p-6 hover:shadow-lg transition-shadow">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
@@ -278,6 +289,14 @@ const Categories = () => {
               <p className="text-gray-600 text-sm mb-4">
                 {category.description}
               </p>
+            )}
+            
+            {/* Tempo de Preparo */}
+            {category.show_prep_time && category.prep_time_min && category.prep_time_max && (
+              <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+                <Clock className="w-4 h-4" />
+                <span>{category.prep_time_min}-{category.prep_time_max} min</span>
+              </div>
             )}
             
             <div className="flex items-center justify-between text-sm text-gray-500">
@@ -339,22 +358,98 @@ const Categories = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Ícone da Categoria
                   </label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {Object.entries(availableIcons).map(([iconKey, iconData]) => (
-                      <button
-                        key={iconKey}
-                        type="button"
-                        onClick={() => setFormData({...formData, icon: iconKey})}
-                        className={`p-3 rounded-lg border-2 transition-colors flex flex-col items-center gap-1 ${
-                          formData.icon === iconKey
-                            ? 'border-primary-500 bg-primary-50 text-primary-600'
-                            : 'border-gray-200 hover:border-gray-300 text-gray-500'
-                        }`}
-                      >
-                        {renderIcon(iconKey, "w-6 h-6")}
-                        <span className="text-xs font-medium">{iconData.name}</span>
-                      </button>
-                    ))}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowIconDropdown(!showIconDropdown)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2">
+                        {renderIcon(formData.icon, "w-5 h-5")}
+                        <span>{availableIcons[formData.icon]?.name || 'Selecionar ícone'}</span>
+                      </div>
+                      <ChevronDown className={`w-4 h-4 transition-transform ${showIconDropdown ? 'rotate-180' : ''}`} />
+                    </button>
+                    
+                    {showIconDropdown && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {Object.entries(availableIcons).map(([iconKey, iconData]) => (
+                          <button
+                            key={iconKey}
+                            type="button"
+                            onClick={() => {
+                              setFormData({...formData, icon: iconKey});
+                              setShowIconDropdown(false);
+                            }}
+                            className="w-full px-3 py-2 flex items-center gap-3 hover:bg-gray-50 text-left"
+                          >
+                            {renderIcon(iconKey, "w-5 h-5")}
+                            <span className="flex-1">{iconData.name}</span>
+                            {formData.icon === iconKey && (
+                              <Check className="w-4 h-4 text-primary-600" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Configurações de Tempo de Preparo */}
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-primary-600" />
+                    Tempo Médio de Preparo
+                  </h4>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="show_prep_time"
+                        name="show_prep_time"
+                        checked={formData.show_prep_time}
+                        onChange={(e) => setFormData(prev => ({ ...prev, show_prep_time: e.target.checked }))}
+                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="show_prep_time" className="text-sm font-medium text-gray-700">
+                        Exibir tempo de preparo no site
+                      </label>
+                    </div>
+                    
+                    {formData.show_prep_time && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Tempo Mínimo (min)
+                          </label>
+                          <input
+                            type="number"
+                            name="prep_time_min"
+                            value={formData.prep_time_min}
+                            onChange={handleInputChange}
+                            min="1"
+                            max="120"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Tempo Máximo (min)
+                          </label>
+                          <input
+                            type="number"
+                            name="prep_time_max"
+                            value={formData.prep_time_max}
+                            onChange={handleInputChange}
+                            min="1"
+                            max="120"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 

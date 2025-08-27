@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Plus, ShoppingCart, Clock, Star, Package, Coffee, Utensils, Cookie } from 'lucide-react';
+import { Search, Plus, ShoppingCart, Clock, Star, Package, Coffee, Utensils, Cookie, Pizza, Wine, Sandwich, IceCream, Soup, Cake } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useStoreSettings } from '../contexts/StoreSettingsContext';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -96,15 +96,16 @@ const Home = () => {
               {categories.map(category => {
                 const getIconForCategory = (iconName) => {
                   switch(iconName) {
-                    case 'Pizza': return <Utensils className="w-5 h-5" />;
+                    case 'Pizza': return <Pizza className="w-5 h-5" />;
                     case 'Coffee': return <Coffee className="w-5 h-5" />;
                     case 'Cookie': return <Cookie className="w-5 h-5" />;
-                    case 'Wine': return <Coffee className="w-5 h-5" />;
-                    case 'Sandwich': return <Utensils className="w-5 h-5" />;
-                    case 'IceCream': return <Cookie className="w-5 h-5" />;
-                    case 'Soup': return <Utensils className="w-5 h-5" />;
-                    case 'Cake': return <Cookie className="w-5 h-5" />;
+                    case 'Wine': return <Wine className="w-5 h-5" />;
+                    case 'Sandwich': return <Sandwich className="w-5 h-5" />;
+                    case 'IceCream': return <IceCream className="w-5 h-5" />;
+                    case 'Soup': return <Soup className="w-5 h-5" />;
+                    case 'Cake': return <Cake className="w-5 h-5" />;
                     case 'Package': return <Package className="w-5 h-5" />;
+                    case 'Utensils': return <Utensils className="w-5 h-5" />;
                     default: return <Utensils className="w-5 h-5" />;
                   }
                 };
@@ -120,7 +121,9 @@ const Home = () => {
                     }`}
                   >
                     {getIconForCategory(category.icon)}
-                    {category.name}
+                    <div className="flex-1 text-left">
+                      <div className="font-medium">{category.name}</div>
+                    </div>
                   </button>
                 );
               })}
@@ -265,10 +268,18 @@ const Home = () => {
                         <span className="text-xl font-bold text-gray-800">
                           R$ {parseFloat(product.price).toFixed(2)}
                         </span>
-                        <div className="flex items-center gap-1 text-gray-500 text-xs">
-                          <Clock className="w-3 h-3" />
-                          <span>25-35 min</span>
-                        </div>
+                                                 {(() => {
+                           const productCategory = categories.find(cat => cat.name === product.category_name);
+                           if (productCategory && productCategory.show_prep_time && productCategory.prep_time_min && productCategory.prep_time_max) {
+                             return (
+                               <div className="flex items-center gap-1 text-gray-500 text-xs">
+                                 <Clock className="w-3 h-3" />
+                                 <span>{productCategory.prep_time_min}-{productCategory.prep_time_max} min</span>
+                               </div>
+                             );
+                           }
+                           return null;
+                         })()}
                       </div>
 
                       <div className="flex items-center gap-2">

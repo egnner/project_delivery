@@ -256,10 +256,10 @@ const Reports = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
+          <div>
           <h1 className="text-3xl font-bold text-gray-900">Relatórios Gerenciais</h1>
           <p className="text-gray-600 mt-1">Análise completa do desempenho do seu negócio</p>
-        </div>
+          </div>
         
         <div className="flex items-center gap-3">
           {/* Filtro de período */}
@@ -275,20 +275,20 @@ const Reports = () => {
           </select>
           
           {/* Botão de atualizar */}
-          <button
+            <button
             onClick={handleRefresh}
             disabled={refreshing}
             className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
-          >
+            >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             Atualizar
-          </button>
+            </button>
+          </div>
         </div>
-      </div>
 
       {/* Alertas */}
       {reportData.alerts?.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <AlertCircle className="w-5 h-5 text-amber-500" />
             Alertas e Insights
@@ -327,110 +327,110 @@ const Reports = () => {
       )}
 
       {/* Métricas Principais */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         {/* Total de Pedidos */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total de Pedidos</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{reportData.totalOrders}</p>
-              <div className="flex items-center mt-2">
+            <div className="min-w-0 flex-1 pr-3">
+              <p className="text-sm font-medium text-gray-600 truncate">Total de Pedidos</p>
+              <p className="text-2xl lg:text-3xl font-bold text-gray-900 mt-2">{reportData.totalOrders}</p>
+              <div className="flex items-center mt-2 text-xs sm:text-sm">
                 {calculateGrowth(reportData.totalOrders, reportData.previousPeriod?.totalOrders) >= 0 ? (
-                  <ArrowUpRight className="w-4 h-4 text-green-500" />
+                  <ArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
                 ) : (
-                  <ArrowDownRight className="w-4 h-4 text-red-500" />
+                  <ArrowDownRight className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 flex-shrink-0" />
                 )}
-                <span className={`text-sm ml-1 ${
+                <span className={`ml-1 font-medium ${
                   calculateGrowth(reportData.totalOrders, reportData.previousPeriod?.totalOrders) >= 0 
                     ? 'text-green-600' : 'text-red-600'
                 }`}>
-                  {Math.abs(calculateGrowth(reportData.totalOrders, reportData.previousPeriod?.totalOrders))}%
+                  {Math.abs(calculateGrowth(reportData.totalOrders, reportData.previousPeriod?.totalOrders)).toFixed(1)}%
                 </span>
-                <span className="text-sm text-gray-500 ml-1">vs período anterior</span>
+                <span className="text-gray-500 ml-1 hidden sm:inline">vs período anterior</span>
               </div>
             </div>
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <ShoppingBag className="w-6 h-6 text-blue-600" />
+            <div className="p-2 lg:p-3 bg-blue-100 rounded-lg flex-shrink-0">
+              <ShoppingBag className="w-5 h-5 lg:w-6 lg:h-6 text-blue-600" />
+              </div>
             </div>
           </div>
-        </div>
-
+          
         {/* Receita Total */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Receita Total</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{formatCurrency(reportData.totalRevenue)}</p>
-              <div className="flex items-center mt-2">
+            <div className="min-w-0 flex-1 pr-3">
+              <p className="text-sm font-medium text-gray-600 truncate">Receita Total</p>
+              <p className="text-2xl lg:text-3xl font-bold text-gray-900 mt-2">{formatCurrency(reportData.totalRevenue)}</p>
+              <div className="flex items-center mt-2 text-xs sm:text-sm">
                 {calculateGrowth(reportData.totalRevenue, reportData.previousPeriod?.totalRevenue) >= 0 ? (
-                  <ArrowUpRight className="w-4 h-4 text-green-500" />
+                  <ArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
                 ) : (
-                  <ArrowDownRight className="w-4 h-4 text-red-500" />
+                  <ArrowDownRight className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 flex-shrink-0" />
                 )}
-                <span className={`text-sm ml-1 ${
+                <span className={`ml-1 font-medium ${
                   calculateGrowth(reportData.totalRevenue, reportData.previousPeriod?.totalRevenue) >= 0 
                     ? 'text-green-600' : 'text-red-600'
                 }`}>
-                  {Math.abs(calculateGrowth(reportData.totalRevenue, reportData.previousPeriod?.totalRevenue))}%
+                  {Math.abs(calculateGrowth(reportData.totalRevenue, reportData.previousPeriod?.totalRevenue)).toFixed(1)}%
                 </span>
-                <span className="text-sm text-gray-500 ml-1">vs período anterior</span>
+                <span className="text-gray-500 ml-1 hidden sm:inline">vs período anterior</span>
               </div>
             </div>
-            <div className="p-3 bg-green-100 rounded-lg">
-              <DollarSign className="w-6 h-6 text-green-600" />
+            <div className="p-2 lg:p-3 bg-green-100 rounded-lg flex-shrink-0">
+              <DollarSign className="w-5 h-5 lg:w-6 lg:h-6 text-green-600" />
+              </div>
             </div>
           </div>
-        </div>
-
+          
         {/* Ticket Médio */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Ticket Médio</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{formatCurrency(reportData.averageOrderValue)}</p>
-              <div className="flex items-center mt-2">
-                <Target className="w-4 h-4 text-purple-500" />
-                <span className="text-sm text-gray-500 ml-1">Meta: R$ 60,00</span>
+            <div className="min-w-0 flex-1 pr-3">
+              <p className="text-sm font-medium text-gray-600 truncate">Ticket Médio</p>
+              <p className="text-2xl lg:text-3xl font-bold text-gray-900 mt-2">{formatCurrency(reportData.averageOrderValue)}</p>
+              <div className="flex items-center mt-2 text-xs sm:text-sm">
+                <Target className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500 flex-shrink-0" />
+                <span className="text-gray-500 ml-1 truncate">Meta: R$ 60,00</span>
               </div>
             </div>
-            <div className="p-3 bg-purple-100 rounded-lg">
-              <TrendingUp className="w-6 h-6 text-purple-600" />
+            <div className="p-2 lg:p-3 bg-purple-100 rounded-lg flex-shrink-0">
+              <TrendingUp className="w-5 h-5 lg:w-6 lg:h-6 text-purple-600" />
+              </div>
             </div>
           </div>
-        </div>
-
+          
         {/* Total de Clientes */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total de Clientes</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{reportData.totalCustomers}</p>
-              <div className="flex items-center mt-2">
+            <div className="min-w-0 flex-1 pr-3">
+              <p className="text-sm font-medium text-gray-600 truncate">Total de Clientes</p>
+              <p className="text-2xl lg:text-3xl font-bold text-gray-900 mt-2">{reportData.totalCustomers}</p>
+              <div className="flex items-center mt-2 text-xs sm:text-sm">
                 {calculateGrowth(reportData.totalCustomers, reportData.previousPeriod?.totalCustomers) >= 0 ? (
-                  <ArrowUpRight className="w-4 h-4 text-green-500" />
+                  <ArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
                 ) : (
-                  <ArrowDownRight className="w-4 h-4 text-red-500" />
+                  <ArrowDownRight className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 flex-shrink-0" />
                 )}
-                <span className={`text-sm ml-1 ${
+                <span className={`ml-1 font-medium ${
                   calculateGrowth(reportData.totalCustomers, reportData.previousPeriod?.totalCustomers) >= 0 
                     ? 'text-green-600' : 'text-red-600'
                 }`}>
-                  {Math.abs(calculateGrowth(reportData.totalCustomers, reportData.previousPeriod?.totalCustomers))}%
+                  {Math.abs(calculateGrowth(reportData.totalCustomers, reportData.previousPeriod?.totalCustomers)).toFixed(1)}%
                 </span>
-                <span className="text-sm text-gray-500 ml-1">vs período anterior</span>
+                <span className="text-gray-500 ml-1 hidden sm:inline">vs período anterior</span>
               </div>
             </div>
-            <div className="p-3 bg-amber-100 rounded-lg">
-              <Users className="w-6 h-6 text-amber-600" />
+            <div className="p-2 lg:p-3 bg-amber-100 rounded-lg flex-shrink-0">
+              <Users className="w-5 h-5 lg:w-6 lg:h-6 text-amber-600" />
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
       {/* Gráficos Principais */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
         {/* Receita por Dia */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Receita por Dia</h3>
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={reportData.revenueByDay}>
@@ -444,7 +444,7 @@ const Reports = () => {
         </div>
 
         {/* Pedidos por Hora */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Pedidos por Horário</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={reportData.ordersByHour}>
@@ -459,9 +459,9 @@ const Reports = () => {
       </div>
 
       {/* Status e Tipos */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
         {/* Status dos Pedidos */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Status dos Pedidos</h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
@@ -481,21 +481,21 @@ const Reports = () => {
               <Legend />
             </PieChart>
           </ResponsiveContainer>
-        </div>
+      </div>
 
         {/* Tipos de Entrega */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Tipos de Entrega</h3>
           <div className="space-y-4">
             {reportData.ordersByType?.map((type, index) => (
               <div key={index} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div 
+                    <div 
                     className="w-4 h-4 rounded-full" 
                     style={{ backgroundColor: type.color }}
-                  ></div>
+                    ></div>
                   <span className="text-sm font-medium text-gray-700">{type.type}</span>
-                </div>
+                  </div>
                 <div className="text-right">
                   <div className="text-sm font-bold text-gray-900">{type.count}</div>
                   <div className="text-xs text-gray-500">{type.percentage}%</div>
@@ -506,18 +506,18 @@ const Reports = () => {
         </div>
 
         {/* Métodos de Pagamento */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Métodos de Pagamento</h3>
           <div className="space-y-4">
             {reportData.paymentMethods?.map((method, index) => (
               <div key={index} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div 
+                    <div 
                     className="w-4 h-4 rounded-full" 
                     style={{ backgroundColor: method.color }}
-                  ></div>
+                    ></div>
                   <span className="text-sm font-medium text-gray-700">{method.method}</span>
-                </div>
+                  </div>
                 <div className="text-right">
                   <div className="text-sm font-bold text-gray-900">{method.count}</div>
                   <div className="text-xs text-gray-500">{method.percentage}%</div>
@@ -529,12 +529,12 @@ const Reports = () => {
       </div>
 
       {/* Produtos e Clientes Top */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
         {/* Top Produtos */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Produtos Mais Vendidos</h3>
           <div className="space-y-4">
-            {reportData.topProducts?.map((product, index) => (
+          {reportData.topProducts?.map((product, index) => (
               <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
@@ -551,14 +551,14 @@ const Reports = () => {
                 <div className="text-right">
                   <p className="font-bold text-gray-900">{product.sales} vendas</p>
                   <p className="text-sm text-gray-600">{formatCurrency(product.revenue)}</p>
-                </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
+      </div>
 
         {/* Top Clientes */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Melhores Clientes</h3>
           <div className="space-y-4">
             {reportData.topCustomers?.map((customer, index) => (
@@ -567,7 +567,7 @@ const Reports = () => {
                   <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                     <Users className="w-5 h-5 text-blue-600" />
                   </div>
-                  <div>
+          <div>
                     <p className="font-medium text-gray-900">{customer.name}</p>
                     <p className="text-sm text-gray-600">Último pedido: {customer.lastOrder}</p>
                   </div>
@@ -583,9 +583,9 @@ const Reports = () => {
       </div>
 
       {/* Métricas Operacionais */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
         {/* Tempo de Preparo */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Clock className="w-5 h-5 text-blue-500" />
             Tempo de Preparo
@@ -611,7 +611,7 @@ const Reports = () => {
         </div>
 
         {/* Performance de Entrega */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Truck className="w-5 h-5 text-green-500" />
             Performance de Entrega
@@ -633,7 +633,7 @@ const Reports = () => {
         </div>
 
         {/* Taxa de Cancelamento */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <AlertCircle className="w-5 h-5 text-red-500" />
             Taxa de Cancelamento
@@ -654,7 +654,7 @@ const Reports = () => {
                   style={{ width: `${Math.min((reportData.cancellationRate / 10) * 100, 100)}%` }}
                 ></div>
               </div>
-            </div>
+          </div>
           </div>
         </div>
       </div>

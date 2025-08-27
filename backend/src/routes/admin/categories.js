@@ -103,7 +103,10 @@ router.post('/', [
     }
     return true;
   }),
-  body('icon').optional().isString().withMessage('Ícone deve ser uma string')
+  body('icon').optional().isString().withMessage('Ícone deve ser uma string'),
+  body('prep_time_min').optional().isInt({ min: 1, max: 120 }).withMessage('Tempo mínimo deve ser entre 1 e 120 minutos'),
+  body('prep_time_max').optional().isInt({ min: 1, max: 120 }).withMessage('Tempo máximo deve ser entre 1 e 120 minutos'),
+  body('show_prep_time').optional().isBoolean().withMessage('Mostrar tempo deve ser um valor booleano')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -114,7 +117,15 @@ router.post('/', [
       });
     }
 
-    const { name, description, image_url, icon } = req.body;
+    const { name, description, image_url, icon, prep_time_min, prep_time_max, show_prep_time } = req.body;
+    
+    // Validar que o tempo máximo não seja menor que o mínimo
+    if (prep_time_min && prep_time_max && parseInt(prep_time_max) < parseInt(prep_time_min)) {
+      return res.status(400).json({ 
+        error: 'Tempo inválido',
+        message: 'O tempo máximo não pode ser menor que o tempo mínimo'
+      });
+    }
     
     // Verificar se já existe categoria com o mesmo nome
     const existingCategory = await getOne('SELECT id FROM categories WHERE name = ?', [name]);
@@ -126,9 +137,9 @@ router.post('/', [
     }
     
     const result = await runCommand(`
-      INSERT INTO categories (name, description, image_url, icon)
-      VALUES (?, ?, ?, ?)
-    `, [name, description, image_url, icon || 'Utensils']);
+      INSERT INTO categories (name, description, image_url, icon, prep_time_min, prep_time_max, show_prep_time)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `, [name, description, image_url, icon || 'Utensils', prep_time_min || 25, prep_time_max || 35, show_prep_time !== undefined ? show_prep_time : true]);
     
     const newCategory = await getOne(`
       SELECT c.*, COUNT(p.id) as product_count
@@ -168,7 +179,10 @@ router.put('/:id', [
     }
     return true;
   }),
-  body('icon').optional().isString().withMessage('Ícone deve ser uma string')
+  body('icon').optional().isString().withMessage('Ícone deve ser uma string'),
+  body('prep_time_min').optional().isInt({ min: 1, max: 120 }).withMessage('Tempo mínimo deve ser entre 1 e 120 minutos'),
+  body('prep_time_max').optional().isInt({ min: 1, max: 120 }).withMessage('Tempo máximo deve ser entre 1 e 120 minutos'),
+  body('show_prep_time').optional().isBoolean().withMessage('Mostrar tempo deve ser um valor booleano')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -180,7 +194,15 @@ router.put('/:id', [
     }
 
     const { id } = req.params;
-    const { name, description, image_url, active, icon } = req.body;
+    const { name, description, image_url, active, icon, prep_time_min, prep_time_max, show_prep_time } = req.body;
+    
+    // Validar que o tempo máximo não seja menor que o mínimo
+    if (prep_time_min && prep_time_max && parseInt(prep_time_max) < parseInt(prep_time_min)) {
+      return res.status(400).json({ 
+        error: 'Tempo inválido',
+        message: 'O tempo máximo não pode ser menor que o tempo mínimo'
+      });
+    }
     
     // Verificar se a categoria existe
     const existingCategory = await getOne('SELECT * FROM categories WHERE id = ?', [id]);
@@ -225,6 +247,18 @@ router.put('/:id', [
     if (icon !== undefined) {
       updates.push('icon = ?');
       params.push(icon);
+    }
+    if (prep_time_min !== undefined) {
+      updates.push('prep_time_min = ?');
+      params.push(prep_time_min);
+    }
+    if (prep_time_max !== undefined) {
+      updates.push('prep_time_max = ?');
+      params.push(prep_time_max);
+    }
+    if (show_prep_time !== undefined) {
+      updates.push('show_prep_time = ?');
+      params.push(show_prep_time);
     }
     
     updates.push('updated_at = ?');
