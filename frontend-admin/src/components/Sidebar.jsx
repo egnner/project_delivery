@@ -32,19 +32,7 @@ const Sidebar = () => {
       {/* Menu de Navegação */}
       <nav className="mt-8">
         <ul className="space-y-2">
-          <li>
-            <Link
-              to="/"
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                location.pathname === '/' 
-                  ? 'bg-primary-100 text-primary-700 border-r-2 border-primary-700' 
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <Home className="w-5 h-5" />
-              Dashboard
-            </Link>
-          </li>
+
           <li>
             <Link
               to="/orders"
@@ -99,9 +87,9 @@ const Sidebar = () => {
           </li>
           <li>
             <Link
-              to="/reports"
+              to="/"
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                location.pathname === '/reports' 
+                location.pathname === '/' || location.pathname === '/reports'
                   ? 'bg-primary-100 text-primary-700 border-r-2 border-primary-700' 
                   : 'text-gray-700 hover:bg-gray-100'
               }`}

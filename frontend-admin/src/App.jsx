@@ -2,7 +2,6 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Sidebar from './components/Sidebar';
-import Dashboard from './pages/Dashboard';
 import Orders from './pages/Orders';
 import Products from './pages/Products';
 import Categories from './pages/Categories';
@@ -40,7 +39,7 @@ const App = () => {
         <Route path="/" element={
           <ProtectedRoute>
             <Layout>
-              <Dashboard />
+              <Reports />
             </Layout>
           </ProtectedRoute>
         } />
