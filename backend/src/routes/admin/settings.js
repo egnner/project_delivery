@@ -41,7 +41,6 @@ router.get('/', async (req, res) => {
           saturday: { open: '09:00', close: '23:00', closed: false },
           sunday: { open: '10:00', close: '22:00', closed: false }
         },
-        about_us: 'Somos uma empresa especializada em delivery de alimentos de qualidade.',
         delivery_info: 'Entregamos em toda a região com prazo médio de 30-45 minutos.',
         delivery_enabled: true,
         pickup_enabled: true,
@@ -76,16 +75,15 @@ router.put('/', async (req, res) => {
       state,
       zip_code,
       opening_hours,
-      about_us,
-              delivery_info,
-        delivery_enabled,
-        pickup_enabled,
-        min_order_amount,
-        delivery_fee,
-        free_delivery_threshold,
-        show_phone,
-        show_email,
-        show_address
+      delivery_info,
+      delivery_enabled,
+      pickup_enabled,
+      min_order_amount,
+      delivery_fee,
+      free_delivery_threshold,
+      show_phone,
+      show_email,
+      show_address
     } = req.body;
 
     // Verificar se já existem configurações
@@ -97,13 +95,13 @@ router.put('/', async (req, res) => {
         UPDATE store_settings SET
           store_name = ?, store_logo = ?, contact_phone = ?, contact_email = ?, address = ?, number = ?,
           neighborhood = ?, city = ?, state = ?, zip_code = ?, opening_hours = ?,
-          about_us = ?, delivery_info = ?, delivery_enabled = ?, pickup_enabled = ?, min_order_amount = ?, delivery_fee = ?,
+          delivery_info = ?, delivery_enabled = ?, pickup_enabled = ?, min_order_amount = ?, delivery_fee = ?,
           free_delivery_threshold = ?, show_phone = ?, show_email = ?, show_address = ?, updated_at = ?
         WHERE id = ?
       `, [
         store_name, store_logo, contact_phone, contact_email, address, number,
         neighborhood, city, state, zip_code, JSON.stringify(opening_hours),
-        about_us, delivery_info, delivery_enabled, pickup_enabled, min_order_amount, delivery_fee,
+        delivery_info, delivery_enabled, pickup_enabled, min_order_amount, delivery_fee,
         free_delivery_threshold, show_phone, show_email, show_address, getCurrentBrazilTime(), existing.id
       ]);
     } else {
@@ -112,13 +110,13 @@ router.put('/', async (req, res) => {
         INSERT INTO store_settings (
           store_name, store_logo, contact_phone, contact_email, address, number,
           neighborhood, city, state, zip_code, opening_hours,
-          about_us, delivery_info, delivery_enabled, pickup_enabled, min_order_amount, delivery_fee,
+          delivery_info, delivery_enabled, pickup_enabled, min_order_amount, delivery_fee,
           free_delivery_threshold, show_phone, show_email, show_address, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         store_name, store_logo, contact_phone, contact_email, address, number,
         neighborhood, city, state, zip_code, JSON.stringify(opening_hours),
-        about_us, delivery_info, delivery_enabled, pickup_enabled, min_order_amount, delivery_fee,
+        delivery_info, delivery_enabled, pickup_enabled, min_order_amount, delivery_fee,
         free_delivery_threshold, show_phone, show_email, show_address, getCurrentBrazilTime(), getCurrentBrazilTime()
       ]);
     }

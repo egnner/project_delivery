@@ -29,7 +29,7 @@ export const StoreSettingsProvider = ({ children }) => {
       saturday: { open: '09:00', close: '23:00', closed: false },
       sunday: { open: '10:00', close: '22:00', closed: false }
     },
-    about_us: 'Somos uma empresa especializada em delivery de alimentos de qualidade.',
+
     delivery_info: 'Entregamos em toda a região com prazo médio de 30-45 minutos.',
     delivery_enabled: true,
     pickup_enabled: true,

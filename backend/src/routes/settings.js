@@ -49,7 +49,7 @@ router.get('/', async (req, res) => {
           saturday: { open: '09:00', close: '23:00', closed: false },
           sunday: { open: '10:00', close: '22:00', closed: false }
         },
-        about_us: 'Somos uma empresa especializada em delivery de alimentos de qualidade.',
+
         delivery_info: 'Entregamos em toda a região com prazo médio de 30-45 minutos.',
         min_order_amount: 15.00,
         delivery_fee: 5.00,

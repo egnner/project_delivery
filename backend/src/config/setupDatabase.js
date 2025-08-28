@@ -154,7 +154,6 @@ const createTables = async () => {
         state TEXT NOT NULL,
         zip_code TEXT,
         opening_hours TEXT,
-        about_us TEXT,
         delivery_info TEXT,
         delivery_enabled BOOLEAN DEFAULT 1,
         pickup_enabled BOOLEAN DEFAULT 1,

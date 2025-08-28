@@ -10,7 +10,7 @@ import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
 import OrderStatus from './pages/OrderStatus'
 import OrderHistory from './pages/OrderHistory'
-import About from './pages/About'
+
 import LoadingSpinner from './components/LoadingSpinner'
 
 function App() {
@@ -35,15 +35,14 @@ function App() {
       <CartProvider>
         <PageTitle />
         <div className="min-h-screen bg-gray-50 flex flex-col">
-          <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+          <Header />
           <main className="flex-1">
             <Routes>
-              <Route path="/" element={<Home searchTerm={searchTerm} />} />
+              <Route path="/" element={<Home searchTerm={searchTerm} setSearchTerm={setSearchTerm} />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/order/:id" element={<OrderStatus />} />
               <Route path="/order-history" element={<OrderHistory />} />
-              <Route path="/about" element={<About />} />
             </Routes>
           </main>
           <Footer />

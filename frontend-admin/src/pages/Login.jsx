@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Lock, Eye, EyeOff, AlertCircle, Shield, LogIn } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -18,7 +18,6 @@ const Login = () => {
       ...prev,
       [name]: value
     }));
-    // Limpar erro quando o usuário digita
     if (error) setError('');
   };
 
@@ -45,11 +44,9 @@ const Login = () => {
       if (response.ok) {
         const data = await response.json();
         
-        // Salvar token no localStorage
         localStorage.setItem('adminToken', data.token);
         localStorage.setItem('adminUser', JSON.stringify(data.user));
         
-        // Redirecionar para página inicial
         navigate('/');
       } else {
         const errorData = await response.json();
@@ -64,23 +61,23 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         {/* Logo e Título */}
         <div className="text-center mb-8">
-          <div className="bg-white w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Lock className="w-10 h-10 text-primary-600" />
+          <div className="w-20 h-20 bg-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <Shield className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Admin Panel
           </h1>
-          <p className="text-primary-100">
-            Acesse o painel administrativo
+          <p className="text-gray-600">
+            Acesse o painel administrativo da loja
           </p>
         </div>
 
         {/* Formulário de Login */}
-        <div className="bg-white rounded-lg shadow-xl p-8">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Campo Email */}
             <div>
@@ -93,7 +90,7 @@ const Login = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                 placeholder="admin@delivery.com"
                 required
               />
@@ -111,14 +108,14 @@ const Login = () => {
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
-                  placeholder="••••••••"
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                  placeholder="Digite sua senha"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   {showPassword ? (
                     <EyeOff className="w-5 h-5" />
@@ -131,9 +128,9 @@ const Login = () => {
 
             {/* Mensagem de Erro */}
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2 text-red-700">
-                <AlertCircle className="w-5 h-5" />
-                <span className="text-sm">{error}</span>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-red-600" />
+                <span className="text-sm text-red-700">{error}</span>
               </div>
             )}
 
@@ -141,7 +138,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
@@ -150,29 +147,42 @@ const Login = () => {
                 </>
               ) : (
                 <>
-                  <Lock className="w-5 h-5" />
-                  Entrar
+                  <LogIn className="w-5 h-5" />
+                  Entrar no Painel
                 </>
               )}
             </button>
           </form>
 
-          {/* Informações de Acesso */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">
-              Credenciais de Acesso:
-            </h3>
-            <div className="text-xs text-gray-600 space-y-1">
-              <p><strong>Email:</strong> admin@delivery.com</p>
-              <p><strong>Senha:</strong> admin123</p>
+          {/* Informações de Acesso para Demo */}
+          <div className="mt-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <div className="flex items-center gap-2 mb-3">
+              <Lock className="w-4 h-4 text-gray-600" />
+              <h3 className="text-sm font-semibold text-gray-700">
+                Credenciais de Demo
+              </h3>
+            </div>
+            <div className="space-y-2 text-sm text-gray-600">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Email:</span>
+                <span className="font-mono bg-white px-2 py-1 rounded border text-xs">
+                  admin@delivery.com
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Senha:</span>
+                <span className="font-mono bg-white px-2 py-1 rounded border text-xs">
+                  admin123
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-6">
-          <p className="text-primary-100 text-sm">
-            © 2024 Delivery Express. Painel Administrativo.
+        <div className="text-center mt-8">
+          <p className="text-gray-500 text-sm">
+            Painel Administrativo - Delivery Express
           </p>
         </div>
       </div>
