@@ -375,7 +375,17 @@ const Customers = () => {
                       <h4 className="text-sm font-semibold text-gray-900 mb-3">Informações de Contato</h4>
                       <div className="flex items-center gap-3 text-sm text-gray-600">
                         <Phone className="w-4 h-4 text-gray-400" />
-                        <span>{customer.customer_phone}</span>
+                        <button
+                          onClick={() => {
+                            const phoneNumber = customer.customer_phone.replace(/\D/g, '');
+                            const whatsappUrl = `https://wa.me/55${phoneNumber}`;
+                            window.open(whatsappUrl, '_blank');
+                          }}
+                          className="hover:text-green-600 hover:underline transition-colors duration-200 cursor-pointer"
+                          title="Abrir WhatsApp"
+                        >
+                          {customer.customer_phone}
+                        </button>
                       </div>
                       <div className="flex items-center gap-3 text-sm text-gray-600">
                         <Mail className="w-4 h-4 text-gray-400" />
@@ -383,7 +393,21 @@ const Customers = () => {
                       </div>
                       <div className="flex items-start gap-3 text-sm text-gray-600">
                         <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
-                        <span className="line-clamp-2">{customer.customer_address || 'Endereço não informado'}</span>
+                        {customer.customer_address ? (
+                          <button
+                            onClick={() => {
+                              const encodedAddress = encodeURIComponent(customer.customer_address);
+                              const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+                              window.open(googleMapsUrl, '_blank');
+                            }}
+                            className="line-clamp-2 hover:text-blue-600 hover:underline transition-colors duration-200 cursor-pointer text-left"
+                            title="Abrir no Google Maps"
+                          >
+                            {customer.customer_address}
+                          </button>
+                        ) : (
+                          <span className="line-clamp-2">Endereço não informado</span>
+                        )}
                       </div>
                     </div>
 
@@ -476,7 +500,17 @@ const Customers = () => {
                       </div>
                       <div className="flex items-center gap-3">
                         <Phone className="w-4 h-4 text-gray-400" />
-                        <span className="text-gray-700">{selectedCustomer.customer_phone}</span>
+                        <button
+                          onClick={() => {
+                            const phoneNumber = selectedCustomer.customer_phone.replace(/\D/g, '');
+                            const whatsappUrl = `https://wa.me/55${phoneNumber}`;
+                            window.open(whatsappUrl, '_blank');
+                          }}
+                          className="text-gray-700 hover:text-green-600 hover:underline transition-colors duration-200 cursor-pointer"
+                          title="Abrir WhatsApp"
+                        >
+                          {selectedCustomer.customer_phone}
+                        </button>
                       </div>
                       <div className="flex items-center gap-3">
                         <Mail className="w-4 h-4 text-gray-400" />
@@ -484,7 +518,21 @@ const Customers = () => {
                       </div>
                       <div className="flex items-start gap-3">
                         <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
-                        <span className="text-gray-700">{selectedCustomer.customer_address || 'Não informado'}</span>
+                        {selectedCustomer.customer_address ? (
+                          <button
+                            onClick={() => {
+                              const encodedAddress = encodeURIComponent(selectedCustomer.customer_address);
+                              const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+                              window.open(googleMapsUrl, '_blank');
+                            }}
+                            className="text-gray-700 hover:text-blue-600 hover:underline transition-colors duration-200 cursor-pointer text-left"
+                            title="Abrir no Google Maps"
+                          >
+                            {selectedCustomer.customer_address}
+                          </button>
+                        ) : (
+                          <span className="text-gray-700">Não informado</span>
+                        )}
                       </div>
                     </div>
                   </div>

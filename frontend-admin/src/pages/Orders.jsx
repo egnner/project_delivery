@@ -16,7 +16,9 @@ import {
   DollarSign,
   Smartphone,
   AlertCircle,
-  MoreVertical
+  MoreVertical,
+  Mail,
+  TrendingUp
 } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { api } from '../config/api';
@@ -34,6 +36,8 @@ const Orders = () => {
   const [socket, setSocket] = useState(null);
   const [notificationPermission, setNotificationPermission] = useState('default');
   const [toasts, setToasts] = useState([]);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
 
   // Função para adicionar toast
   const addToast = (message, type = 'info', duration = 5000) => {
@@ -68,6 +72,45 @@ const Orders = () => {
   // Função para mostrar toast de informação
   const showInfoToast = (message) => {
     addToast(message, 'info');
+  };
+
+  // Função para buscar cliente por telefone
+  const fetchCustomerByPhone = async (phone) => {
+    try {
+      const response = await api.get(`/api/admin/customers?phone=${phone}`);
+      if (response && response.ok) {
+        const data = await response.json();
+        if (data.data && data.data.length > 0) {
+          return data.data[0]; // Retorna o primeiro cliente encontrado
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao buscar cliente:', error);
+    }
+    return null;
+  };
+
+  // Função para abrir modal do cliente
+  const handleCustomerClick = async (order) => {
+    const customer = await fetchCustomerByPhone(order.customer_phone);
+    if (customer) {
+      // Adiciona o endereço de entrega do pedido ao objeto do cliente
+      setSelectedCustomer({ ...customer, order_delivery_address: order.delivery_address });
+      setShowCustomerModal(true);
+    } else {
+      // Se não encontrar o cliente, mostrar dados básicos do pedido
+      setSelectedCustomer({
+        customer_name: order.customer_name,
+        customer_phone: order.customer_phone,
+        customer_address: order.customer_address,
+        order_delivery_address: order.delivery_address,
+        total_orders: 1,
+        total_spent: order.total_amount,
+        first_order_date: order.created_at,
+        last_order_date: order.created_at
+      });
+      setShowCustomerModal(true);
+    }
   };
 
   // Função para solicitar permissão de notificação
@@ -758,20 +801,47 @@ const Orders = () => {
 
                 {/* Informações do Pedido */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                    <Phone className="w-5 h-5 text-blue-500" />
-                    <div>
-                      <p className="text-xs text-gray-500 font-medium">Telefone</p>
-                      <p className="text-sm text-gray-900 font-semibold">{order.customer_phone}</p>
-                    </div>
-                  </div>
+                                     <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                     <Phone className="w-5 h-5 text-blue-500" />
+                     <div>
+                       <p className="text-xs text-gray-500 font-medium">Telefone</p>
+                       <button
+                         onClick={() => {
+                           const phoneNumber = order.customer_phone.replace(/\D/g, '');
+                           const whatsappUrl = `https://wa.me/55${phoneNumber}`;
+                           window.open(whatsappUrl, '_blank');
+                         }}
+                         className="text-sm text-gray-900 font-semibold hover:text-green-600 hover:underline transition-colors duration-200 cursor-pointer"
+                         title="Abrir WhatsApp"
+                       >
+                         {order.customer_phone}
+                       </button>
+                     </div>
+                   </div>
                   <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                     <MapPin className="w-5 h-5 text-green-500" />
                     <div>
                       <p className="text-xs text-gray-500 font-medium">Local</p>
-                      <p className="text-sm text-gray-900 font-semibold truncate">
-                        {order.delivery_type === 'pickup' ? 'Retirada no Balcão' : order.customer_address}
-                      </p>
+                      {order.delivery_type === 'pickup' ? (
+                        <p className="text-sm text-gray-900 font-semibold truncate">
+                          Retirada no Balcão
+                        </p>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            const address = order.delivery_address || order.customer_address;
+                            if (address) {
+                              const encodedAddress = encodeURIComponent(address);
+                              const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+                              window.open(googleMapsUrl, '_blank');
+                            }
+                          }}
+                          className="text-sm text-gray-900 font-semibold truncate hover:text-blue-600 hover:underline transition-colors duration-200 cursor-pointer text-left"
+                          title="Abrir no Google Maps"
+                        >
+                          {order.delivery_address || order.customer_address || 'Endereço não informado'}
+                        </button>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
@@ -795,15 +865,23 @@ const Orders = () => {
                 {/* Detalhes do Pedido */}
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
-                        <span className="text-white font-bold text-lg">{order.customer_name.charAt(0).toUpperCase()}</span>
-                      </div>
-                      <div>
-                        <p className="font-bold text-gray-900 text-lg">{order.customer_name}</p>
+                                      <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => handleCustomerClick(order)}
+                      className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 cursor-pointer"
+                    >
+                      <span className="text-white font-bold text-lg">{order.customer_name.charAt(0).toUpperCase()}</span>
+                    </button>
+                    <div>
+                      <button
+                        onClick={() => handleCustomerClick(order)}
+                        className="text-left hover:text-blue-600 transition-colors duration-200"
+                      >
+                        <p className="font-bold text-gray-900 text-lg hover:text-blue-600">{order.customer_name}</p>
                         <p className="text-sm text-gray-500">Pedido #{order.id} • {formatDate(order.created_at)}</p>
-                      </div>
+                      </button>
                     </div>
+                  </div>
                     <div className="text-right">
                       <p className="text-2xl font-bold text-blue-600">
                         R$ {order.total_amount.toFixed(2).replace('.', ',')}
@@ -958,15 +1036,46 @@ const Orders = () => {
                   <h3 className="text-lg font-semibold text-gray-800 mb-3">Informações do Cliente</h3>
                   <div className="space-y-2">
                     <p><span className="font-medium">Nome:</span> {selectedOrder.customer_name}</p>
-                    <p><span className="font-medium">Telefone:</span> {selectedOrder.customer_phone}</p>
+                                         <p>
+                       <span className="font-medium">Telefone:</span> 
+                       <button
+                         onClick={() => {
+                           const phoneNumber = selectedOrder.customer_phone.replace(/\D/g, '');
+                           const whatsappUrl = `https://wa.me/55${phoneNumber}`;
+                           window.open(whatsappUrl, '_blank');
+                         }}
+                         className="ml-2 text-blue-600 hover:text-green-600 hover:underline transition-colors duration-200 cursor-pointer"
+                         title="Abrir WhatsApp"
+                       >
+                         {selectedOrder.customer_phone}
+                       </button>
+                     </p>
                     <p><span className="font-medium">Tipo de Entrega:</span> 
                       <span className="ml-2 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         {selectedOrder.delivery_type === 'pickup' ? 'Retirada no Balcão' : 'Entrega'}
                       </span>
                     </p>
-                    <p><span className="font-medium">Endereço:</span> 
-                      {selectedOrder.delivery_type === 'pickup' ? 'Retirada no local' : selectedOrder.customer_address}
-                    </p>
+                                         <p>
+                       <span className="font-medium">Endereço:</span> 
+                       {selectedOrder.delivery_type === 'pickup' ? (
+                         'Retirada no local'
+                       ) : (
+                         <button
+                           onClick={() => {
+                             const address = selectedOrder.delivery_address || selectedOrder.customer_address;
+                             if (address) {
+                               const encodedAddress = encodeURIComponent(address);
+                               const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+                               window.open(googleMapsUrl, '_blank');
+                             }
+                           }}
+                           className="ml-2 text-blue-600 hover:text-green-600 hover:underline transition-colors duration-200 cursor-pointer"
+                           title="Abrir no Google Maps"
+                         >
+                           {selectedOrder.delivery_address || selectedOrder.customer_address || 'Endereço não informado'}
+                         </button>
+                       )}
+                     </p>
                   </div>
                 </div>
                 <div>
@@ -1047,6 +1156,172 @@ const Orders = () => {
                   Cancelar
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Detalhes do Cliente */}
+      {showCustomerModal && selectedCustomer && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                    <span className="text-white font-bold text-2xl">{selectedCustomer.customer_name.charAt(0).toUpperCase()}</span>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">{selectedCustomer.customer_name}</h2>
+                    <p className="text-gray-600">{selectedCustomer.customer_phone}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowCustomerModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <XCircle className="w-6 h-6 text-gray-500" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Informações Básicas */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Informações Básicas</h3>
+                  
+                  <div className="space-y-3">
+                                         <div className="flex items-center gap-3">
+                       <Phone className="w-5 h-5 text-gray-400" />
+                       <button
+                         onClick={() => {
+                           const phoneNumber = selectedCustomer.customer_phone.replace(/\D/g, '');
+                           const whatsappUrl = `https://wa.me/55${phoneNumber}`;
+                           window.open(whatsappUrl, '_blank');
+                         }}
+                         className="text-gray-700 hover:text-green-600 hover:underline transition-colors duration-200 cursor-pointer"
+                         title="Abrir WhatsApp"
+                       >
+                         {selectedCustomer.customer_phone}
+                       </button>
+                     </div>
+                    
+                                         {selectedCustomer.customer_address && (
+                       <div className="flex items-start gap-3">
+                         <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
+                         <button
+                           onClick={() => {
+                             const encodedAddress = encodeURIComponent(selectedCustomer.customer_address);
+                             const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+                             window.open(googleMapsUrl, '_blank');
+                           }}
+                           className="text-gray-700 hover:text-blue-600 hover:underline transition-colors duration-200 cursor-pointer text-left"
+                           title="Abrir no Google Maps"
+                         >
+                           {selectedCustomer.customer_address}
+                         </button>
+                       </div>
+                     )}
+                     
+                                           {selectedCustomer.order_delivery_address && (
+                        <div className="flex items-start gap-3">
+                          <Truck className="w-5 h-5 text-gray-400 mt-0.5" />
+                          <div>
+                            <span className="text-sm text-gray-500 font-medium">Endereço de Entrega:</span>
+                            <button
+                              onClick={() => {
+                                const encodedAddress = encodeURIComponent(selectedCustomer.order_delivery_address);
+                                const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+                                window.open(googleMapsUrl, '_blank');
+                              }}
+                              className="text-gray-700 hover:text-blue-600 hover:underline transition-colors duration-200 cursor-pointer text-left"
+                              title="Abrir no Google Maps"
+                            >
+                              {selectedCustomer.order_delivery_address}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    
+                    {selectedCustomer.customer_email && (
+                      <div className="flex items-center gap-3">
+                        <Mail className="w-5 h-5 text-gray-400" />
+                        <span className="text-gray-700">{selectedCustomer.customer_email}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Estatísticas */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Estatísticas</h3>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Package className="w-5 h-5 text-blue-600" />
+                        <span className="text-sm font-medium text-blue-900">Total de Pedidos</span>
+                      </div>
+                      <p className="text-2xl font-bold text-blue-600">{selectedCustomer.total_orders || 1}</p>
+                    </div>
+                    
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <DollarSign className="w-5 h-5 text-green-600" />
+                        <span className="text-sm font-medium text-green-900">Total Gasto</span>
+                      </div>
+                      <p className="text-2xl font-bold text-green-600">
+                        R$ {(selectedCustomer.total_spent || 0).toFixed(2).replace('.', ',')}
+                      </p>
+                    </div>
+                  </div>
+
+                  {selectedCustomer.total_orders > 1 && (
+                    <div className="bg-purple-50 p-4 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <TrendingUp className="w-5 h-5 text-purple-600" />
+                        <span className="text-sm font-medium text-purple-900">Ticket Médio</span>
+                      </div>
+                      <p className="text-2xl font-bold text-purple-600">
+                        R$ {((selectedCustomer.total_spent || 0) / (selectedCustomer.total_orders || 1)).toFixed(2).replace('.', ',')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Histórico de Pedidos */}
+              {selectedCustomer.total_orders > 1 && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Histórico</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3">
+                      <Calendar className="w-5 h-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-600">Primeiro Pedido</p>
+                        <p className="font-medium text-gray-900">
+                          {selectedCustomer.first_order_date 
+                            ? new Date(selectedCustomer.first_order_date).toLocaleDateString('pt-BR')
+                            : 'N/A'
+                          }
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-5 h-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-600">Último Pedido</p>
+                        <p className="font-medium text-gray-900">
+                          {selectedCustomer.last_order_date 
+                            ? new Date(selectedCustomer.last_order_date).toLocaleDateString('pt-BR')
+                            : 'N/A'
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
