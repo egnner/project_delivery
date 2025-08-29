@@ -18,6 +18,17 @@ router.get('/', async (req, res) => {
       if (settings.opening_hours) {
         settings.opening_hours = JSON.parse(settings.opening_hours);
       }
+      
+      // Parse payment methods
+      if (settings.payment_methods) {
+        try {
+          settings.payment_methods = JSON.parse(settings.payment_methods);
+        } catch (e) {
+          settings.payment_methods = ['dinheiro', 'pix', 'cartao'];
+        }
+      } else {
+        settings.payment_methods = ['dinheiro', 'pix', 'cartao'];
+      }
       res.json({ success: true, data: settings });
     } else {
       // Retornar configurações padrão se não existirem
@@ -49,7 +60,14 @@ router.get('/', async (req, res) => {
         free_delivery_threshold: 50.00,
         show_phone: true,
         show_email: true,
-        show_address: true
+        show_address: true,
+        payment_methods: ['dinheiro', 'pix', 'cartao'],
+        payment_pix_enabled: true,
+        payment_cartao_enabled: true,
+        payment_dinheiro_enabled: true,
+        payment_gateway_enabled: false,
+        payment_gateway_provider: null,
+        payment_gateway_credentials: null
       };
       
       res.json({ success: true, data: defaultSettings });
@@ -83,7 +101,14 @@ router.put('/', async (req, res) => {
       free_delivery_threshold,
       show_phone,
       show_email,
-      show_address
+      show_address,
+      payment_methods,
+      payment_pix_enabled,
+      payment_cartao_enabled,
+      payment_dinheiro_enabled,
+      payment_gateway_enabled,
+      payment_gateway_provider,
+      payment_gateway_credentials
     } = req.body;
 
     // Verificar se já existem configurações
@@ -96,13 +121,17 @@ router.put('/', async (req, res) => {
           store_name = ?, store_logo = ?, contact_phone = ?, contact_email = ?, address = ?, number = ?,
           neighborhood = ?, city = ?, state = ?, zip_code = ?, opening_hours = ?,
           delivery_info = ?, delivery_enabled = ?, pickup_enabled = ?, min_order_amount = ?, delivery_fee = ?,
-          free_delivery_threshold = ?, show_phone = ?, show_email = ?, show_address = ?, updated_at = ?
+          free_delivery_threshold = ?, show_phone = ?, show_email = ?, show_address = ?,
+          payment_methods = ?, payment_pix_enabled = ?, payment_cartao_enabled = ?, payment_dinheiro_enabled = ?,
+          payment_gateway_enabled = ?, payment_gateway_provider = ?, payment_gateway_credentials = ?, updated_at = ?
         WHERE id = ?
       `, [
         store_name, store_logo, contact_phone, contact_email, address, number,
         neighborhood, city, state, zip_code, JSON.stringify(opening_hours),
         delivery_info, delivery_enabled, pickup_enabled, min_order_amount, delivery_fee,
-        free_delivery_threshold, show_phone, show_email, show_address, getCurrentBrazilTime(), existing.id
+        free_delivery_threshold, show_phone, show_email, show_address,
+        JSON.stringify(payment_methods), payment_pix_enabled, payment_cartao_enabled, payment_dinheiro_enabled,
+        payment_gateway_enabled, payment_gateway_provider, payment_gateway_credentials, getCurrentBrazilTime(), existing.id
       ]);
     } else {
       // Criar novas configurações
@@ -111,13 +140,17 @@ router.put('/', async (req, res) => {
           store_name, store_logo, contact_phone, contact_email, address, number,
           neighborhood, city, state, zip_code, opening_hours,
           delivery_info, delivery_enabled, pickup_enabled, min_order_amount, delivery_fee,
-          free_delivery_threshold, show_phone, show_email, show_address, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          free_delivery_threshold, show_phone, show_email, show_address,
+          payment_methods, payment_pix_enabled, payment_cartao_enabled, payment_dinheiro_enabled,
+          payment_gateway_enabled, payment_gateway_provider, payment_gateway_credentials, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         store_name, store_logo, contact_phone, contact_email, address, number,
         neighborhood, city, state, zip_code, JSON.stringify(opening_hours),
         delivery_info, delivery_enabled, pickup_enabled, min_order_amount, delivery_fee,
-        free_delivery_threshold, show_phone, show_email, show_address, getCurrentBrazilTime(), getCurrentBrazilTime()
+        free_delivery_threshold, show_phone, show_email, show_address,
+        JSON.stringify(payment_methods), payment_pix_enabled, payment_cartao_enabled, payment_dinheiro_enabled,
+        payment_gateway_enabled, payment_gateway_provider, payment_gateway_credentials, getCurrentBrazilTime(), getCurrentBrazilTime()
       ]);
     }
 

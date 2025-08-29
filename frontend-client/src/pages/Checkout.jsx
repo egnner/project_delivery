@@ -22,7 +22,7 @@ import { io } from 'socket.io-client';
 const Checkout = () => {
   const navigate = useNavigate();
   const { items, total, clearCart, setCustomerInfo } = useCart();
-  const { settings, isStoreOpen } = useStoreSettings();
+  const { settings, isStoreOpen, getAvailablePaymentMethods, isPaymentMethodAvailable } = useStoreSettings();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -47,6 +47,14 @@ const Checkout = () => {
       setFormData(prev => ({ ...prev, deliveryType: 'delivery' }));
     }
   }, [settings.delivery_enabled, settings.pickup_enabled]);
+
+  // Definir método de pagamento padrão baseado nos métodos disponíveis
+  useEffect(() => {
+    const availableMethods = getAvailablePaymentMethods();
+    if (availableMethods.length > 0 && !availableMethods.includes(formData.paymentMethod)) {
+      setFormData(prev => ({ ...prev, paymentMethod: availableMethods[0] }));
+    }
+  }, [settings.payment_methods]);
 
   const [loading, setLoading] = useState(false);
   const [orderSubmitted, setOrderSubmitted] = useState(false);
@@ -437,57 +445,63 @@ const Checkout = () => {
                     <h3 className="text-lg font-semibold text-gray-900">Método de Pagamento</h3>
                   </div>
                   
-                  <div className="grid grid-cols-3 gap-4">
-                    <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                      formData.paymentMethod === 'pix' ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:bg-gray-50'
-                    }`}>
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="pix"
-                        checked={formData.paymentMethod === 'pix'}
-                        onChange={handleInputChange}
-                        className="mr-3 text-red-600 focus:ring-red-500"
-                      />
-                      <div className="flex items-center">
-                        <Smartphone className="w-5 h-5 text-green-600 mr-2" />
-                        <span className="font-medium">PIX</span>
-                      </div>
-                    </label>
+                  <div className={`grid gap-4 ${getAvailablePaymentMethods().length === 1 ? 'grid-cols-1' : getAvailablePaymentMethods().length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                    {isPaymentMethodAvailable('pix') && (
+                      <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                        formData.paymentMethod === 'pix' ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:bg-gray-50'
+                      }`}>
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="pix"
+                          checked={formData.paymentMethod === 'pix'}
+                          onChange={handleInputChange}
+                          className="mr-3 text-red-600 focus:ring-red-500"
+                        />
+                        <div className="flex items-center">
+                          <Smartphone className="w-5 h-5 text-green-600 mr-2" />
+                          <span className="font-medium">PIX</span>
+                        </div>
+                      </label>
+                    )}
                     
-                    <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                      formData.paymentMethod === 'cartao' ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:bg-gray-50'
-                    }`}>
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="cartao"
-                        checked={formData.paymentMethod === 'cartao'}
-                        onChange={handleInputChange}
-                        className="mr-3 text-red-600 focus:ring-red-500"
-                      />
-                      <div className="flex items-center">
-                        <CreditCard className="w-5 h-5 text-blue-600 mr-2" />
-                        <span className="font-medium">Cartão</span>
-                      </div>
-                    </label>
+                    {isPaymentMethodAvailable('cartao') && (
+                      <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                        formData.paymentMethod === 'cartao' ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:bg-gray-50'
+                      }`}>
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="cartao"
+                          checked={formData.paymentMethod === 'cartao'}
+                          onChange={handleInputChange}
+                          className="mr-3 text-red-600 focus:ring-red-500"
+                        />
+                        <div className="flex items-center">
+                          <CreditCard className="w-5 h-5 text-blue-600 mr-2" />
+                          <span className="font-medium">Cartão</span>
+                        </div>
+                      </label>
+                    )}
                     
-                    <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                      formData.paymentMethod === 'dinheiro' ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:bg-gray-50'
-                    }`}>
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="dinheiro"
-                        checked={formData.paymentMethod === 'dinheiro'}
-                        onChange={handleInputChange}
-                        className="mr-3 text-red-600 focus:ring-red-500"
-                      />
-                      <div className="flex items-center">
-                        <DollarSign className="w-5 h-5 text-green-600 mr-2" />
-                        <span className="font-medium">Dinheiro</span>
-                      </div>
-                    </label>
+                    {isPaymentMethodAvailable('dinheiro') && (
+                      <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                        formData.paymentMethod === 'dinheiro' ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:bg-gray-50'
+                      }`}>
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="dinheiro"
+                          checked={formData.paymentMethod === 'dinheiro'}
+                          onChange={handleInputChange}
+                          className="mr-3 text-red-600 focus:ring-red-500"
+                        />
+                        <div className="flex items-center">
+                          <DollarSign className="w-5 h-5 text-green-600 mr-2" />
+                          <span className="font-medium">Dinheiro</span>
+                        </div>
+                      </label>
+                    )}
                   </div>
                 </div>
 
@@ -820,56 +834,62 @@ const Checkout = () => {
               </div>
               
               <div className="space-y-3">
-                <label className={`flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all ${
-                  formData.paymentMethod === 'pix' ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                }`}>
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="pix"
-                    checked={formData.paymentMethod === 'pix'}
-                    onChange={handleInputChange}
-                    className="mr-3 text-red-600"
-                  />
-                  <div className="flex items-center">
-                    <Smartphone className="w-4 h-4 text-green-600 mr-2" />
-                    <span className="font-medium">PIX</span>
-                  </div>
-                </label>
+                {isPaymentMethodAvailable('pix') && (
+                  <label className={`flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                    formData.paymentMethod === 'pix' ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="pix"
+                      checked={formData.paymentMethod === 'pix'}
+                      onChange={handleInputChange}
+                      className="mr-3 text-red-600"
+                    />
+                    <div className="flex items-center">
+                      <Smartphone className="w-4 h-4 text-green-600 mr-2" />
+                      <span className="font-medium">PIX</span>
+                    </div>
+                  </label>
+                )}
                 
-                <label className={`flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all ${
-                  formData.paymentMethod === 'cartao' ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                }`}>
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="cartao"
-                    checked={formData.paymentMethod === 'cartao'}
-                    onChange={handleInputChange}
-                    className="mr-3 text-red-600"
-                  />
-                  <div className="flex items-center">
-                    <CreditCard className="w-4 h-4 text-blue-600 mr-2" />
-                    <span className="font-medium">Cartão</span>
-                  </div>
-                </label>
+                {isPaymentMethodAvailable('cartao') && (
+                  <label className={`flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                    formData.paymentMethod === 'cartao' ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="cartao"
+                      checked={formData.paymentMethod === 'cartao'}
+                      onChange={handleInputChange}
+                      className="mr-3 text-red-600"
+                    />
+                    <div className="flex items-center">
+                      <CreditCard className="w-4 h-4 text-blue-600 mr-2" />
+                      <span className="font-medium">Cartão</span>
+                    </div>
+                  </label>
+                )}
                 
-                <label className={`flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all ${
-                  formData.paymentMethod === 'dinheiro' ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                }`}>
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="dinheiro"
-                    checked={formData.paymentMethod === 'dinheiro'}
-                    onChange={handleInputChange}
-                    className="mr-3 text-red-600"
-                  />
-                  <div className="flex items-center">
-                    <DollarSign className="w-4 h-4 text-green-600 mr-2" />
-                    <span className="font-medium">Dinheiro</span>
-                  </div>
-                </label>
+                {isPaymentMethodAvailable('dinheiro') && (
+                  <label className={`flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                    formData.paymentMethod === 'dinheiro' ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="dinheiro"
+                      checked={formData.paymentMethod === 'dinheiro'}
+                      onChange={handleInputChange}
+                      className="mr-3 text-red-600"
+                    />
+                    <div className="flex items-center">
+                      <DollarSign className="w-4 h-4 text-green-600 mr-2" />
+                      <span className="font-medium">Dinheiro</span>
+                    </div>
+                  </label>
+                )}
               </div>
             </div>
 

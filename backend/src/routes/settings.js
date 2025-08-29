@@ -26,6 +26,18 @@ router.get('/', async (req, res) => {
           };
         }
       }
+
+      // Parse payment methods
+      if (settings.payment_methods) {
+        try {
+          settings.payment_methods = JSON.parse(settings.payment_methods);
+        } catch (e) {
+          console.error('Erro ao fazer parse dos métodos de pagamento:', e);
+          settings.payment_methods = ['dinheiro', 'pix', 'cartao'];
+        }
+      } else {
+        settings.payment_methods = ['dinheiro', 'pix', 'cartao'];
+      }
       
       res.json({ success: true, data: settings });
     } else {
@@ -56,7 +68,14 @@ router.get('/', async (req, res) => {
         free_delivery_threshold: 50.00,
         show_phone: true,
         show_email: true,
-        show_address: true
+        show_address: true,
+        payment_methods: ['dinheiro', 'pix', 'cartao'],
+        payment_pix_enabled: true,
+        payment_cartao_enabled: true,
+        payment_dinheiro_enabled: true,
+        payment_gateway_enabled: false,
+        payment_gateway_provider: null,
+        payment_gateway_credentials: null
       };
       
       res.json({ success: true, data: defaultSettings });

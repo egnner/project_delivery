@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 
 const StoreSettingsContext = createContext();
 
@@ -35,7 +35,14 @@ export const StoreSettingsProvider = ({ children }) => {
     pickup_enabled: true,
     min_order_amount: 15.00,
     delivery_fee: 5.00,
-    free_delivery_threshold: 50.00
+    free_delivery_threshold: 50.00,
+    payment_methods: ['dinheiro', 'pix', 'cartao'],
+    payment_pix_enabled: true,
+    payment_cartao_enabled: true,
+    payment_dinheiro_enabled: true,
+    payment_gateway_enabled: false,
+    payment_gateway_provider: null,
+    payment_gateway_credentials: null
   });
   const [loading, setLoading] = useState(true);
 
@@ -60,10 +67,24 @@ export const StoreSettingsProvider = ({ children }) => {
               console.error('Erro ao fazer parse dos horários:', e);
             }
           }
+
+          // Garantir que payment_methods seja um array válido
+          let paymentMethods = data.data.payment_methods;
+          if (typeof paymentMethods === 'string') {
+            try {
+              paymentMethods = JSON.parse(paymentMethods);
+            } catch (e) {
+              console.error('Erro ao fazer parse dos métodos de pagamento:', e);
+              paymentMethods = ['dinheiro', 'pix', 'cartao'];
+            }
+          } else if (!Array.isArray(paymentMethods)) {
+            paymentMethods = ['dinheiro', 'pix', 'cartao'];
+          }
           
           setSettings({
             ...data.data,
-            opening_hours: openingHours || settings.opening_hours
+            opening_hours: openingHours || settings.opening_hours,
+            payment_methods: paymentMethods
           });
         }
       }
@@ -136,12 +157,29 @@ export const StoreSettingsProvider = ({ children }) => {
     return currentTime >= todayHours.open && currentTime <= todayHours.close;
   };
 
+  // Função para obter métodos de pagamento disponíveis
+  const getAvailablePaymentMethods = useMemo(() => {
+    return () => settings.payment_methods || ['dinheiro', 'pix', 'cartao'];
+  }, [settings.payment_methods]);
+
+  // Função para verificar se um método de pagamento está disponível
+  const isPaymentMethodAvailable = useMemo(() => {
+    return (method) => settings.payment_methods?.includes(method) || false;
+  }, [settings.payment_methods]);
+
+  // Função para recarregar as configurações (útil para sincronização)
+  const reloadSettings = async () => {
+    await loadStoreSettings();
+  };
+
   const value = {
     settings,
     loading,
     formatOpeningHours,
     isStoreOpen,
-    reloadSettings: loadStoreSettings
+    reloadSettings: loadStoreSettings,
+    getAvailablePaymentMethods,
+    isPaymentMethodAvailable
   };
 
   return (

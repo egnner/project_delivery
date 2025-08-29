@@ -57,6 +57,49 @@ const createTables = async () => {
       // Coluna já existe, ignorar erro
     }
 
+    // Adicionar colunas de métodos de pagamento se não existirem (migração)
+    try {
+      await runCommand(`ALTER TABLE store_settings ADD COLUMN payment_methods TEXT DEFAULT '["dinheiro","pix","cartao"]'`);
+    } catch (error) {
+      // Coluna já existe, ignorar erro
+    }
+
+    try {
+      await runCommand(`ALTER TABLE store_settings ADD COLUMN payment_pix_enabled BOOLEAN DEFAULT 1`);
+    } catch (error) {
+      // Coluna já existe, ignorar erro
+    }
+
+    try {
+      await runCommand(`ALTER TABLE store_settings ADD COLUMN payment_cartao_enabled BOOLEAN DEFAULT 1`);
+    } catch (error) {
+      // Coluna já existe, ignorar erro
+    }
+
+    try {
+      await runCommand(`ALTER TABLE store_settings ADD COLUMN payment_dinheiro_enabled BOOLEAN DEFAULT 1`);
+    } catch (error) {
+      // Coluna já existe, ignorar erro
+    }
+
+    try {
+      await runCommand(`ALTER TABLE store_settings ADD COLUMN payment_gateway_enabled BOOLEAN DEFAULT 0`);
+    } catch (error) {
+      // Coluna já existe, ignorar erro
+    }
+
+    try {
+      await runCommand(`ALTER TABLE store_settings ADD COLUMN payment_gateway_provider TEXT`);
+    } catch (error) {
+      // Coluna já existe, ignorar erro
+    }
+
+    try {
+      await runCommand(`ALTER TABLE store_settings ADD COLUMN payment_gateway_credentials TEXT`);
+    } catch (error) {
+      // Coluna já existe, ignorar erro
+    }
+
     // Tabela de produtos
     await runCommand(`
       CREATE TABLE IF NOT EXISTS products (
@@ -164,6 +207,13 @@ const createTables = async () => {
         show_email BOOLEAN DEFAULT 1,
         show_address BOOLEAN DEFAULT 1,
         show_contact_info BOOLEAN DEFAULT 1,
+        payment_methods TEXT DEFAULT '["dinheiro","pix","cartao"]',
+        payment_pix_enabled BOOLEAN DEFAULT 1,
+        payment_cartao_enabled BOOLEAN DEFAULT 1,
+        payment_dinheiro_enabled BOOLEAN DEFAULT 1,
+        payment_gateway_enabled BOOLEAN DEFAULT 0,
+        payment_gateway_provider TEXT,
+        payment_gateway_credentials TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
@@ -219,6 +269,34 @@ const insertInitialData = async () => {
         VALUES (?, ?, ?, ?, ?)
       `, [name, description, price, categoryId, image]);
     }
+
+    // Criar configurações padrão da loja
+    const defaultOpeningHours = {
+      monday: { open: '08:00', close: '22:00', closed: false },
+      tuesday: { open: '08:00', close: '22:00', closed: false },
+      wednesday: { open: '08:00', close: '22:00', closed: false },
+      thursday: { open: '08:00', close: '22:00', closed: false },
+      friday: { open: '08:00', close: '23:00', closed: false },
+      saturday: { open: '09:00', close: '23:00', closed: false },
+      sunday: { open: '10:00', close: '22:00', closed: false }
+    };
+
+    await runCommand(`
+      INSERT OR IGNORE INTO store_settings (
+        store_name, store_logo, contact_phone, contact_email, address, number,
+        neighborhood, city, state, zip_code, opening_hours, delivery_info,
+        delivery_enabled, pickup_enabled, min_order_amount, delivery_fee,
+        free_delivery_threshold, show_phone, show_email, show_address, show_contact_info,
+        payment_methods, payment_pix_enabled, payment_cartao_enabled, payment_dinheiro_enabled,
+        payment_gateway_enabled, payment_gateway_provider, payment_gateway_credentials
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      'Minha Loja', '', '(11) 99999-9999', 'contato@minhaloja.com', 'Rua das Flores', '123',
+      'Centro', 'São Paulo', 'SP', '01234-567', JSON.stringify(defaultOpeningHours),
+      'Entregamos em toda a região com prazo médio de 30-45 minutos.',
+      1, 1, 15.00, 5.00, 50.00, 1, 1, 1, 1,
+      JSON.stringify(['dinheiro', 'pix', 'cartao']), 1, 1, 1, 0, null, null
+    ]);
 
     console.log('✅ Dados iniciais inseridos com sucesso!');
 
