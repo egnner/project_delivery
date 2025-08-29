@@ -233,6 +233,7 @@ const Orders = () => {
     });
 
     newSocket.on('order-updated', (data) => {
+      console.log('Socket: Pedido atualizado:', data.order.id, 'Status:', data.order.order_status);
       setOrders(prevOrders =>
         prevOrders.map(order =>
           order.id === data.order.id ? data.order : order
@@ -415,10 +416,17 @@ const Orders = () => {
   };
 
   const isOrderFinished = (order) => {
-    return order.order_status === 'entregue' ||
+    const finished = order.order_status === 'entregue' ||
       order.order_status === 'cancelado' ||
       order.order_status === 'finalizado' ||
       order.order_status === 'retirado';
+    
+    // Debug log para verificar status
+    if (order.order_status === 'retirado' || order.order_status === 'finalizado') {
+      console.log(`Pedido #${order.id} - Status: ${order.order_status} - Finalizado: ${finished}`);
+    }
+    
+    return finished;
   };
 
   const getOrderPriority = (order) => {
@@ -466,6 +474,22 @@ const Orders = () => {
       return orderDate.toDateString() === today.toDateString();
     }).length
   };
+
+  // Debug: Log das estatísticas
+  console.log('📊 Estatísticas:', {
+    total: stats.total,
+    pending: stats.pending,
+    active: stats.active,
+    finished: stats.finished,
+    today: stats.today
+  });
+
+  // Debug: Log dos pedidos com status finalizado/retirado
+  orders.forEach(order => {
+    if (order.order_status === 'finalizado' || order.order_status === 'retirado') {
+      console.log(`🔍 Pedido #${order.id}: Status=${order.order_status}, Finalizado=${isOrderFinished(order)}`);
+    }
+  });
 
   if (loading) {
     return (
