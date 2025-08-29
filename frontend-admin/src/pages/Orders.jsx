@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Package, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  Truck, 
-  Eye, 
+import {
+  Package,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Truck,
+  Eye,
   Copy,
   Search,
   Filter,
@@ -24,7 +24,11 @@ import {
   BellOff,
   Volume2,
   ExternalLink,
-  MessageCircle
+  MessageCircle,
+  AlertTriangle,
+  Timer,
+  CheckCircle2,
+  Ban
 } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { api } from '../config/api';
@@ -48,13 +52,13 @@ const Orders = () => {
   const addToast = (message, type = 'info', duration = 5000) => {
     const id = Date.now();
     const toast = { id, message, type, duration };
-    
+
     setToasts(prev => [...prev, toast]);
-    
+
     setTimeout(() => {
       removeToast(id);
     }, duration);
-    
+
     return id;
   };
 
@@ -122,41 +126,41 @@ const Orders = () => {
       const frequency = 800;
       const duration = 0.4;
       const volume = 0.3;
-      
+
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
-      
+
       oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
       oscillator.type = 'sine';
-      
+
       gainNode.gain.setValueAtTime(0, audioContext.currentTime);
       gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.05);
       gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-      
+
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
-      
+
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + duration);
-      
+
       setTimeout(() => {
         const oscillator2 = audioContext.createOscillator();
         const gainNode2 = audioContext.createGain();
-        
+
         oscillator2.frequency.setValueAtTime(1000, audioContext.currentTime);
         oscillator2.type = 'sine';
-        
+
         gainNode2.gain.setValueAtTime(0, audioContext.currentTime);
         gainNode2.gain.linearRampToValueAtTime(volume * 0.7, audioContext.currentTime + 0.02);
         gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-        
+
         oscillator2.connect(gainNode2);
         gainNode2.connect(audioContext.destination);
-        
+
         oscillator2.start(audioContext.currentTime);
         oscillator2.stop(audioContext.currentTime + 0.2);
       }, 200);
-      
+
     } catch (error) {
       console.error('Erro ao tocar som:', error);
     }
@@ -197,20 +201,20 @@ const Orders = () => {
 
   const notifyNewOrder = (order) => {
     playNotificationSound();
-    
+
     const notification = showBrowserNotification(
       'Novo Pedido Recebido!',
       `Pedido #${order.id} de ${order.customer_name} - R$ ${order.total_amount.toFixed(2).replace('.', ',')}`,
       '/favicon.ico'
     );
-    
+
     showInfoToast(`Novo pedido #${order.id} recebido de ${order.customer_name}`);
   };
 
   useEffect(() => {
     if ('Notification' in window) {
       setNotificationPermission(Notification.permission);
-      
+
       if (Notification.permission === 'default') {
         setTimeout(() => {
           requestNotificationPermission();
@@ -229,8 +233,8 @@ const Orders = () => {
     });
 
     newSocket.on('order-updated', (data) => {
-      setOrders(prevOrders => 
-        prevOrders.map(order => 
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
           order.id === data.order.id ? data.order : order
         )
       );
@@ -248,7 +252,7 @@ const Orders = () => {
   const fetchOrders = async () => {
     try {
       const response = await api.get('/api/admin/orders');
-      
+
       if (response && response.ok) {
         const data = await response.json();
         setOrders(data.data || []);
@@ -411,15 +415,15 @@ const Orders = () => {
   };
 
   const isOrderFinished = (order) => {
-    return order.order_status === 'entregue' || 
-           order.order_status === 'cancelado' || 
-           order.order_status === 'finalizado' ||
-           order.order_status === 'retirado';
+    return order.order_status === 'entregue' ||
+      order.order_status === 'cancelado' ||
+      order.order_status === 'finalizado' ||
+      order.order_status === 'retirado';
   };
 
   const getOrderPriority = (order) => {
     if (isOrderFinished(order)) return 100;
-    
+
     switch (order.order_status) {
       case 'novo':
         return order.payment_status === 'pendente' ? 0 : 1;
@@ -437,13 +441,13 @@ const Orders = () => {
   };
 
   const filteredOrders = orders.filter(order => {
-    const matchesSearch = 
+    const matchesSearch =
       order.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.id.toString().includes(searchTerm) ||
       order.customer_phone?.includes(searchTerm);
-    
+
     const matchesStatus = statusFilter === 'all' || order.order_status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   }).sort((a, b) => {
     const priorityDiff = getOrderPriority(a) - getOrderPriority(b);
@@ -455,7 +459,12 @@ const Orders = () => {
     total: orders.length,
     pending: orders.filter(o => o.payment_status === 'pendente').length,
     active: orders.filter(o => !isOrderFinished(o)).length,
-    finished: orders.filter(o => isOrderFinished(o)).length
+    finished: orders.filter(o => isOrderFinished(o)).length,
+    today: orders.filter(o => {
+      const orderDate = new Date(o.created_at);
+      const today = new Date();
+      return orderDate.toDateString() === today.toDateString();
+    }).length
   };
 
   if (loading) {
@@ -483,7 +492,7 @@ const Orders = () => {
                 Acompanhe e gerencie todos os pedidos em tempo real
               </p>
             </div>
-            
+
             <div className="flex items-center gap-4">
               {/* Status de Notificações */}
               <div className="flex items-center gap-3 bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
@@ -500,9 +509,9 @@ const Orders = () => {
                     </span>
                   </div>
                 </div>
-                
+
                 <div className="h-8 w-px bg-gray-200"></div>
-                
+
                 <button
                   onClick={playNotificationSound}
                   className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
@@ -510,7 +519,7 @@ const Orders = () => {
                 >
                   <Volume2 className="w-4 h-4" />
                 </button>
-                
+
                 {notificationPermission !== 'granted' && (
                   <>
                     <div className="h-8 w-px bg-gray-200"></div>
@@ -528,52 +537,79 @@ const Orders = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center">
-                <Package className="w-6 h-6 text-blue-600" />
+                {/* Stats Cards - Design Técnico */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+          <div className="bg-white border-2 border-blue-200 rounded-xl p-4 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-blue-300">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                <Package className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                <p className="text-sm text-gray-600">Total de Pedidos</p>
+                <p className="text-2xl font-bold text-gray-900 font-mono">{stats.total.toString().padStart(3, '0')}</p>
+                <p className="text-xs text-gray-600 font-bold uppercase tracking-wide">TOTAL PEDIDOS</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center">
-                <Clock className="w-6 h-6 text-orange-600" />
+          <div className={`bg-white border-2 rounded-xl p-4 shadow-lg hover:shadow-xl transition-all duration-300 ${stats.pending > 0
+              ? 'border-orange-300 ring-2 ring-orange-200/50 animate-pulse'
+                : 'border-orange-200 hover:border-orange-300'
+            }`}>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg">
+                <Clock className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
-                <p className="text-sm text-gray-600">Aguardando Pagamento</p>
+                <p className="text-2xl font-bold text-gray-900 font-mono">{stats.pending.toString().padStart(3, '0')}</p>
+                <p className="text-xs text-gray-600 font-bold uppercase tracking-wide flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  PENDENTE PGTO
+                </p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-lg flex items-center justify-center">
-                <Truck className="w-6 h-6 text-yellow-600" />
+          <div className="bg-white border-2 border-yellow-200 rounded-xl p-4 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-yellow-300">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-amber-500 rounded-xl flex items-center justify-center shadow-lg">
+                <Truck className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.active}</p>
-                <p className="text-sm text-gray-600">Em Andamento</p>
+                <p className="text-2xl font-bold text-gray-900 font-mono">{stats.active.toString().padStart(3, '0')}</p>
+                <p className="text-xs text-gray-600 font-bold uppercase tracking-wide flex items-center gap-1">
+                  <Timer className="w-3 h-3" />
+                  EM ANDAMENTO
+                </p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-green-600" />
+          <div className="bg-white border-2 border-green-200 rounded-xl p-4 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-green-300">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
+                <CheckCircle className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.finished}</p>
-                <p className="text-sm text-gray-600">Finalizados</p>
+                <p className="text-2xl font-bold text-gray-900 font-mono">{stats.finished.toString().padStart(3, '0')}</p>
+                <p className="text-xs text-gray-600 font-bold uppercase tracking-wide flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  FINALIZADOS
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white border-2 border-purple-200 rounded-xl p-4 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-purple-300">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl flex items-center justify-center shadow-lg">
+                <Calendar className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900 font-mono">{stats.today.toString().padStart(3, '0')}</p>
+                <p className="text-xs text-gray-600 font-bold uppercase tracking-wide flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  PEDIDOS HOJE
+                </p>
               </div>
             </div>
           </div>
@@ -594,7 +630,7 @@ const Orders = () => {
                 />
               </div>
             </div>
-            
+
             <div className="relative">
               <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <select
@@ -617,287 +653,340 @@ const Orders = () => {
           </div>
         </div>
 
-        {/* Indicador de Ordenação */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 mb-6 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-            <span className="text-sm text-blue-700 font-medium">
-              🎯 Ordenação inteligente: Pedidos em andamento aparecem primeiro
-            </span>
-          </div>
-          <div className="mt-2 text-xs text-blue-600">
-            Prioridade: Pagamento pendente → Em preparo → Pronto → Em entrega → Finalizados
-          </div>
-        </div>
-
         {/* Lista de Pedidos */}
         {filteredOrders.length === 0 ? (
-          <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Package className="w-8 h-8 text-gray-400" />
+          <div className="bg-white border border-gray-200 rounded-lg p-8 text-center shadow-sm">
+            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <Package className="w-6 h-6 text-gray-400" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <h3 className="text-base font-semibold text-gray-900 mb-2">
               Nenhum pedido encontrado
             </h3>
-            <p className="text-gray-600">
-              {searchTerm || statusFilter !== 'all' 
+            <p className="text-sm text-gray-600">
+              {searchTerm || statusFilter !== 'all'
                 ? 'Tente ajustar os filtros para encontrar o que procura'
                 : 'Quando chegarem novos pedidos, eles aparecerão aqui'
               }
             </p>
           </div>
         ) : (
-          <div className="space-y-4 lg:space-y-6">
-            {filteredOrders.map((order) => (
-              <div key={order.id} className={`bg-white border-2 rounded-lg p-6 hover:shadow-md transition-all ${
-                isOrderFinished(order) 
-                  ? 'border-gray-200 opacity-75' 
-                  : 'border-blue-200 hover:border-blue-300'
-              }`}>
-                
-                {/* Header do Card */}
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${isOrderFinished(order) ? 'bg-gray-100' : 'bg-blue-100'}`}>
-                        {getStatusIcon(order.order_status)}
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <span className={`px-3 py-1 rounded-lg text-sm font-semibold border ${getStatusColor(order.order_status)}`}>
-                          {order.order_status === 'novo' && '⏳ Aguardando Pagamento'}
-                          {order.order_status === 'preparando' && '👨‍🍳 Preparando'}
-                          {order.order_status === 'pronto' && '✅ Pedido Pronto'}
-                          {order.order_status === 'saiu_entrega' && '🚛 Saiu para Entrega'}
-                          {order.order_status === 'pronto_retirada' && '✅ Pronto para Retirada'}
-                          {order.order_status === 'entregue' && '🎉 Entregue'}
-                          {order.order_status === 'retirado' && '📦 Retirado'}
-                          {order.order_status === 'finalizado' && '🏁 Finalizado'}
-                          {order.order_status === 'cancelado' && '❌ Cancelado'}
-                        </span>
-                        <span className={`px-2 py-1 rounded text-xs font-medium border ${getPaymentStatusColor(order.payment_status)}`}>
-                          {order.payment_status === 'pendente' && '💳 Aguardando Pagamento'}
-                          {order.payment_status === 'confirmado' && '✅ Pagamento Confirmado'}
-                          {order.payment_status === 'rejeitado' && '❌ Pagamento Rejeitado'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => copyTrackingLink(order.id)}
-                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                      title="Copiar link de rastreamento"
-                    >
-                      <Copy className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedOrder(order);
-                        setShowModal(true);
-                      }}
-                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                      title="Ver detalhes"
-                    >
-                      <Eye className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
+          <div className="space-y-4">
+            {filteredOrders.map((order) => {
+              const isPending = order.payment_status === 'pendente';
+              const isActive = !isOrderFinished(order);
 
-                {/* Informações do Pedido */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <Phone className="w-4 h-4 text-blue-500" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs text-gray-500 font-medium">Telefone</p>
-                      <button
-                        onClick={() => {
-                          const phoneNumber = order.customer_phone.replace(/\D/g, '');
-                          const whatsappUrl = `https://wa.me/55${phoneNumber}`;
-                          window.open(whatsappUrl, '_blank');
-                        }}
-                        className="text-sm text-gray-900 font-semibold hover:text-green-600 transition-colors flex items-center gap-1 w-full"
-                        title="Abrir WhatsApp"
-                      >
-                        <MessageCircle className="w-3 h-3 flex-shrink-0" />
-                        <span className="truncate">{order.customer_phone}</span>
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <MapPin className="w-4 h-4 text-green-500" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs text-gray-500 font-medium">Local</p>
-                      {order.delivery_type === 'pickup' ? (
-                        <p className="text-sm text-gray-900 font-semibold">Retirada no Balcão</p>
-                      ) : (
+              return (
+                <div
+                  key={order.id}
+                  className={`relative overflow-hidden rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ${isPending
+                      ? 'bg-gradient-to-r from-orange-50 via-white to-orange-50 border-2 border-orange-300 ring-2 ring-orange-200/50'
+                      : isActive
+                        ? 'bg-gradient-to-r from-blue-50 via-white to-blue-50 border-2 border-blue-200 hover:border-blue-300'
+                        : 'bg-gradient-to-r from-gray-50 via-white to-gray-50 border-2 border-gray-200 opacity-90'
+                    }`}
+                >
+                  {/* Indicador de Prioridade */}
+                  {isPending && (
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-400 to-red-400"></div>
+                  )}
+                  {isActive && !isPending && (
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 to-indigo-400"></div>
+                  )}
+
+                  <div className="p-4">
+                    {/* Header Técnico do Card */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-4">
+                                                {/* Status Principal */}
+                        <div className="relative">
+                          <div className={`p-2 rounded-lg shadow-sm ${isPending
+                              ? 'bg-gradient-to-br from-orange-100 to-orange-200 ring-2 ring-orange-300/50'
+                                : isActive
+                                  ? 'bg-gradient-to-br from-blue-100 to-blue-200'
+                                  : 'bg-gradient-to-br from-gray-100 to-gray-200'
+                            }`}>
+                            {getStatusIcon(order.order_status)}
+                          </div>
+                          {isPending && (
+                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
+                              <AlertTriangle className="w-2 h-2 text-white" />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Status Labels Modernos */}
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <span className={`px-3 py-1 rounded-lg text-xs font-bold border-2 shadow-sm ${getStatusColor(order.order_status)} ${isPending ? 'ring-2 ring-orange-300/50' : ''
+                              }`}>
+                              <span className="flex items-center gap-1">
+                                {order.order_status === 'novo' && <><Clock className="w-3 h-3" /> AGUARDANDO PAGAMENTO</>}
+                                {order.order_status === 'preparando' && <><Package className="w-3 h-3" /> EM PREPARO</>}
+                                {order.order_status === 'pronto' && <><CheckCircle className="w-3 h-3" /> PRONTO</>}
+                                {order.order_status === 'saiu_entrega' && <><Truck className="w-3 h-3" /> EM ROTA</>}
+                                {order.order_status === 'pronto_retirada' && <><CheckCircle className="w-3 h-3" /> PRONTO P/ RETIRADA</>}
+                                {order.order_status === 'entregue' && <><CheckCircle className="w-3 h-3" /> ENTREGUE</>}
+                                {order.order_status === 'retirado' && <><CheckCircle className="w-3 h-3" /> RETIRADO</>}
+                                {order.order_status === 'finalizado' && <><CheckCircle className="w-3 h-3" /> FINALIZADO</>}
+                                {order.order_status === 'cancelado' && <><XCircle className="w-3 h-3" /> CANCELADO</>}
+                              </span>
+                            </span>
+
+                            {/* ID do Pedido - Destaque Técnico */}
+                            <span className="px-2 py-1 bg-gray-900 text-white text-xs font-mono rounded">
+                              #{order.id.toString().padStart(4, '0')}
+                            </span>
+                          </div>
+
+                          <span className={`px-2 py-1 rounded text-xs font-bold border ${getPaymentStatusColor(order.payment_status)} ${isPending ? 'animate-pulse ring-2 ring-orange-300/50' : ''
+                            }`}>
+                            {order.payment_status === 'pendente' && <span className="flex items-center gap-1"><Timer className="w-3 h-3" /> PAGAMENTO PENDENTE</span>}
+                            {order.payment_status === 'confirmado' && <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> PAGAMENTO OK</span>}
+                            {order.payment_status === 'rejeitado' && <span className="flex items-center gap-1"><Ban className="w-3 h-3" /> PAGAMENTO REJEITADO</span>}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Ações Rápidas */}
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => copyTrackingLink(order.id)}
+                          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-100 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+                          title="Copiar link de rastreamento"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
                         <button
                           onClick={() => {
-                            const address = order.delivery_address || order.customer_address;
-                            if (address) {
-                              const encodedAddress = encodeURIComponent(address);
-                              const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
-                              window.open(googleMapsUrl, '_blank');
-                            }
+                            setSelectedOrder(order);
+                            setShowModal(true);
                           }}
-                          className="text-sm text-gray-900 font-semibold hover:text-blue-600 transition-colors flex items-center gap-1 w-full"
-                          title="Abrir no Google Maps"
+                          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-100 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+                          title="Ver detalhes"
                         >
-                          <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                          <span className="truncate">{order.delivery_address || order.customer_address || 'Endereço não informado'}</span>
+                          <Eye className="w-4 h-4" />
                         </button>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <Truck className="w-4 h-4 text-purple-500" />
-                    <div>
-                      <p className="text-xs text-gray-500 font-medium">Tipo</p>
-                      <p className="text-sm text-gray-900 font-semibold">
-                        {order.delivery_type === 'pickup' ? 'Retirada' : 'Entrega'}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    {getPaymentMethodIcon(order.payment_method)}
-                    <div>
-                      <p className="text-xs text-gray-500 font-medium">Pagamento</p>
-                      <p className="text-sm text-gray-900 font-semibold capitalize">{order.payment_method}</p>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Detalhes do Cliente e Valor */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={() => handleCustomerClick(order)}
-                      className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-sm"
-                    >
-                      <span className="text-white font-bold text-lg">{order.customer_name.charAt(0).toUpperCase()}</span>
-                    </button>
-                    <div className="min-w-0 flex-1">
-                      <button
-                        onClick={() => handleCustomerClick(order)}
-                        className="text-left hover:text-blue-600 transition-colors w-full"
-                      >
-                        <p className="font-bold text-gray-900 text-lg hover:text-blue-600 truncate">{order.customer_name}</p>
-                        <p className="text-sm text-gray-500">Pedido #{order.id} • {formatDate(order.created_at)}</p>
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-blue-600">
-                      R$ {order.total_amount.toFixed(2).replace('.', ',')}
-                    </p>
-                  </div>
-                </div>
+                    {/* Dados Técnicos do Pedido */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                      <div className={`flex items-center gap-2 p-3 rounded-lg shadow-sm border ${isPending ? 'bg-orange-50 border-orange-200' : 'bg-gray-50 border-gray-200'
+                        }`}>
+                        <div className="p-1.5 bg-blue-100 rounded">
+                          <Phone className="w-3 h-3 text-blue-600" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">CONTATO</p>
+                          <button
+                            onClick={() => {
+                              const phoneNumber = order.customer_phone.replace(/\D/g, '');
+                              const whatsappUrl = `https://wa.me/55${phoneNumber}`;
+                              window.open(whatsappUrl, '_blank');
+                            }}
+                            className="text-xs text-gray-900 font-bold hover:text-green-600 transition-colors flex items-center gap-1 w-full group"
+                            title="Abrir WhatsApp"
+                          >
+                            <span className="truncate font-mono">{order.customer_phone}</span>
+                          </button>
+                        </div>
+                      </div>
 
-                {/* Botões de Ação */}
-                <div className="flex flex-wrap items-center gap-3 mt-6 pt-6 border-t border-gray-200">
-                  {order.payment_status === 'pendente' && (
-                    <>
-                      <button
-                        onClick={() => {
-                          setSelectedOrderForPayment(order);
-                          setShowPaymentModal(true);
-                        }}
-                        className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-sm font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                        Confirmar Pagamento
-                      </button>
-                      <button
-                        onClick={() => rejectPayment(order.id)}
-                        className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white text-sm font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
-                      >
-                        <XCircle className="w-4 h-4" />
-                        Rejeitar
-                      </button>
-                    </>
-                  )}
-                  
-                  {order.payment_status === 'confirmado' && !isOrderFinished(order) && (
-                    <div className="flex flex-wrap items-center gap-3">
-                      {order.order_status === 'novo' && (
+                      <div className={`flex items-center gap-2 p-3 rounded-lg shadow-sm border ${isPending ? 'bg-orange-50 border-orange-200' : 'bg-gray-50 border-gray-200'
+                        }`}>
+                        <div className="p-1.5 bg-green-100 rounded">
+                          <MapPin className="w-3 h-3 text-green-600" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">DESTINO</p>
+                          {order.delivery_type === 'pickup' ? (
+                            <p className="text-xs text-gray-900 font-bold">RETIRADA NO BALCÃO</p>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                const address = order.delivery_address || order.customer_address;
+                                if (address) {
+                                  const encodedAddress = encodeURIComponent(address);
+                                  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+                                  window.open(googleMapsUrl, '_blank');
+                                }
+                              }}
+                              className="text-xs text-gray-900 font-bold hover:text-blue-600 transition-colors flex items-center gap-1 w-full group"
+                              title="Abrir no Google Maps"
+                            >
+                              <ExternalLink className="w-2 h-2 flex-shrink-0 group-hover:text-blue-600" />
+                              <span className="truncate">{order.delivery_address || order.customer_address || 'Endereço não informado'}</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className={`flex items-center gap-2 p-3 rounded-lg shadow-sm border ${isPending ? 'bg-orange-50 border-orange-200' : 'bg-gray-50 border-gray-200'
+                        }`}>
+                        <div className="p-1.5 bg-purple-100 rounded">
+                          <Truck className="w-3 h-3 text-purple-600" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">MODALIDADE</p>
+                          <p className="text-xs text-gray-900 font-bold">
+                            {order.delivery_type === 'pickup' ? 'RETIRADA' : 'ENTREGA'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className={`flex items-center gap-2 p-3 rounded-lg shadow-sm border ${isPending ? 'bg-orange-50 border-orange-200' : 'bg-gray-50 border-gray-200'
+                        }`}>
+                        <div className="p-1.5 bg-indigo-100 rounded">
+                          {getPaymentMethodIcon(order.payment_method)}
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">PAGAMENTO</p>
+                          <p className="text-xs text-gray-900 font-bold uppercase">{order.payment_method}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                                        {/* Cliente e Valor - Layout Técnico */}
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-3 bg-white/80 rounded-lg border border-gray-200 shadow-sm">
+                      <div className="flex items-center gap-3">
                         <button
-                          onClick={() => updateOrderStatus(order.id, 'preparando')}
-                          className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
+                          onClick={() => handleCustomerClick(order)}
+                          className={`w-12 h-12 rounded-lg flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 ${isPending
+                              ? 'bg-gradient-to-br from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600'
+                                : 'bg-gradient-to-br from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600'
+                            }`}
                         >
-                          <Clock className="w-4 h-4" />
-                          Iniciar Preparo
+                          <span className="text-white font-bold text-lg">{order.customer_name.charAt(0).toUpperCase()}</span>
                         </button>
+                        <div className="min-w-0 flex-1">
+                          <button
+                            onClick={() => handleCustomerClick(order)}
+                            className="text-left hover:text-blue-600 transition-colors w-full group"
+                          >
+                            <p className="font-bold text-gray-900 text-lg group-hover:text-blue-600 truncate">{order.customer_name}</p>
+                            <p className="text-xs text-gray-500 font-mono">
+                              <span className="font-bold">ORDER:</span> #{order.id.toString().padStart(4, '0')} •
+                              <span className="font-bold ml-1">TIME:</span> {formatDate(order.created_at)}
+                            </p>
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="text-right">
+                        <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg ${isPending ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'
+                          }`}>
+                          <DollarSign className="w-4 h-4" />
+                          <span className="text-2xl font-bold font-mono">
+                            R$ {order.total_amount.toFixed(2).replace('.', ',')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Botões de Ação - Design Técnico */}
+                    <div className={`flex flex-wrap items-center gap-3 mt-4 pt-4 border-t-2 ${isPending ? 'border-orange-200' : 'border-gray-200'
+                      }`}>
+                                              {order.payment_status === 'pendente' && (
+                          <>
+                            <button
+                              onClick={() => {
+                                setSelectedOrderForPayment(order);
+                                setShowPaymentModal(true);
+                              }}
+                              className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-xs font-bold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2 border-2 border-green-500/20 ring-2 ring-green-200/50"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                              CONFIRMAR PAGAMENTO
+                            </button>
+                            <button
+                              onClick={() => rejectPayment(order.id)}
+                              className="px-6 py-3 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white text-xs font-bold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2 border-2 border-red-500/20"
+                            >
+                              <XCircle className="w-4 h-4" />
+                              REJEITAR PAGAMENTO
+                            </button>
+                          </>
+                        )}
+
+                      {order.payment_status === 'confirmado' && !isOrderFinished(order) && (
+                        <div className="flex flex-wrap items-center gap-3">
+                          {order.order_status === 'novo' && (
+                            <button
+                              onClick={() => updateOrderStatus(order.id, 'preparando')}
+                              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2 border-2 border-blue-500/20"
+                            >
+                              <Clock className="w-4 h-4" />
+                              INICIAR PREPARO
+                            </button>
+                          )}
+                          {order.order_status === 'preparando' && order.delivery_type === 'delivery' && (
+                            <button
+                              onClick={() => updateOrderStatus(order.id, 'pronto')}
+                              className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white text-xs font-bold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2 border-2 border-indigo-500/20"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                              MARCAR PRONTO
+                            </button>
+                          )}
+                          {order.order_status === 'preparando' && order.delivery_type === 'pickup' && (
+                            <button
+                              onClick={() => updateOrderStatus(order.id, 'pronto_retirada')}
+                              className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white text-xs font-bold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2 border-2 border-indigo-500/20"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                              PRONTO P/ RETIRADA
+                            </button>
+                          )}
+                          {order.order_status === 'pronto' && order.delivery_type === 'delivery' && (
+                            <button
+                              onClick={() => updateOrderStatus(order.id, 'saiu_entrega')}
+                              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-xs font-bold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2 border-2 border-purple-500/20"
+                            >
+                              <Truck className="w-4 h-4" />
+                              SAIU PARA ENTREGA
+                            </button>
+                          )}
+                          {order.order_status === 'saiu_entrega' && (
+                            <button
+                              onClick={() => updateOrderStatus(order.id, 'entregue')}
+                              className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-xs font-bold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2 border-2 border-green-500/20"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                              CONFIRMAR ENTREGA
+                            </button>
+                          )}
+                          {order.order_status === 'pronto_retirada' && (
+                            <button
+                              onClick={() => updateOrderStatus(order.id, 'retirado')}
+                              className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-xs font-bold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2 border-2 border-green-500/20"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                              CONFIRMAR RETIRADA
+                            </button>
+                          )}
+                          {(order.order_status === 'entregue' || order.order_status === 'retirado') && (
+                            <button
+                              onClick={() => updateOrderStatus(order.id, 'finalizado')}
+                              className="px-6 py-3 bg-gradient-to-r from-gray-600 to-slate-600 hover:from-gray-700 hover:to-slate-700 text-white text-xs font-bold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2 border-2 border-gray-500/20"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                              FINALIZAR PEDIDO
+                            </button>
+                          )}
+                        </div>
                       )}
-                      {order.order_status === 'preparando' && order.delivery_type === 'delivery' && (
-                        <button
-                          onClick={() => updateOrderStatus(order.id, 'pronto')}
-                          className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white text-sm font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
-                        >
+
+                      {isOrderFinished(order) && (
+                        <div className="px-4 py-2 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 text-xs font-bold rounded-lg flex items-center gap-2 border-2 border-gray-300">
                           <CheckCircle className="w-4 h-4" />
-                          Marcar Pronto
-                        </button>
-                      )}
-                      {order.order_status === 'preparando' && order.delivery_type === 'pickup' && (
-                        <button
-                          onClick={() => updateOrderStatus(order.id, 'pronto_retirada')}
-                          className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white text-sm font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
-                        >
-                          <CheckCircle className="w-4 h-4" />
-                          Pronto para Retirada
-                        </button>
-                      )}
-                      {order.order_status === 'pronto' && order.delivery_type === 'delivery' && (
-                        <button
-                          onClick={() => updateOrderStatus(order.id, 'saiu_entrega')}
-                          className="px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white text-sm font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
-                        >
-                          <Truck className="w-4 h-4" />
-                          Saiu para Entrega
-                        </button>
-                      )}
-                      {order.order_status === 'saiu_entrega' && (
-                        <button
-                          onClick={() => updateOrderStatus(order.id, 'entregue')}
-                          className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-sm font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
-                        >
-                          <CheckCircle className="w-4 h-4" />
-                          Confirmar Entrega
-                        </button>
-                      )}
-                      {order.order_status === 'pronto_retirada' && (
-                        <button
-                          onClick={() => updateOrderStatus(order.id, 'retirado')}
-                          className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-sm font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
-                        >
-                          <CheckCircle className="w-4 h-4" />
-                          Confirmar Retirada
-                        </button>
-                      )}
-                      {(order.order_status === 'entregue' || order.order_status === 'retirado') && (
-                        <button
-                          onClick={() => updateOrderStatus(order.id, 'finalizado')}
-                          className="px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white text-sm font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
-                        >
-                          <CheckCircle className="w-4 h-4" />
-                          Finalizar Pedido
-                        </button>
+                          PEDIDO FINALIZADO
+                        </div>
                       )}
                     </div>
-                  )}
-                  
-                  {isOrderFinished(order) && (
-                    <div className="px-4 py-2 bg-gray-100 text-gray-600 text-sm font-medium rounded-lg flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4" />
-                      Pedido Finalizado
-                    </div>
-                  )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -988,7 +1077,7 @@ const Orders = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-3">Pagamento</h3>
                     <div className="space-y-3 text-sm">
@@ -1051,7 +1140,7 @@ const Orders = () => {
                 <h3 className="text-lg font-semibold text-gray-900">Confirmar Pagamento</h3>
                 <p className="text-gray-600">Pedido #{selectedOrderForPayment.id} - {selectedOrderForPayment.customer_name}</p>
               </div>
-              
+
               <div className="flex gap-3">
                 <button
                   onClick={() => confirmPayment(selectedOrderForPayment.id)}
@@ -1114,11 +1203,10 @@ const Orders = () => {
                         }}
                         className="text-gray-700 hover:text-green-600 hover:underline transition-colors flex items-center gap-1"
                       >
-                        <MessageCircle className="w-3 h-3" />
                         {selectedCustomer.customer_phone}
                       </button>
                     </div>
-                    
+
                     {selectedCustomer.customer_address && (
                       <div className="flex items-start gap-3">
                         <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
@@ -1130,12 +1218,11 @@ const Orders = () => {
                           }}
                           className="text-gray-700 hover:text-blue-600 hover:underline transition-colors text-left flex items-center gap-1"
                         >
-                          <ExternalLink className="w-3 h-3" />
                           {selectedCustomer.customer_address}
                         </button>
                       </div>
                     )}
-                    
+
                     {selectedCustomer.order_delivery_address && (
                       <div className="flex items-start gap-3">
                         <Truck className="w-4 h-4 text-gray-400 mt-0.5" />
@@ -1168,7 +1255,7 @@ const Orders = () => {
                       </div>
                       <p className="text-2xl font-bold text-blue-600">{selectedCustomer.total_orders || 1}</p>
                     </div>
-                    
+
                     <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
                       <div className="flex items-center gap-2 mb-2">
                         <DollarSign className="w-4 h-4 text-green-600" />
@@ -1203,20 +1290,20 @@ const Orders = () => {
                       <div>
                         <p className="text-sm text-gray-600">Primeiro Pedido</p>
                         <p className="font-medium text-gray-900">
-                          {selectedCustomer.first_order_date 
+                          {selectedCustomer.first_order_date
                             ? new Date(selectedCustomer.first_order_date).toLocaleDateString('pt-BR')
                             : 'N/A'
                           }
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-3">
                       <Clock className="w-4 h-4 text-gray-400" />
                       <div>
                         <p className="text-sm text-gray-600">Último Pedido</p>
                         <p className="font-medium text-gray-900">
-                          {selectedCustomer.last_order_date 
+                          {selectedCustomer.last_order_date
                             ? new Date(selectedCustomer.last_order_date).toLocaleDateString('pt-BR')
                             : 'N/A'
                           }
@@ -1236,11 +1323,10 @@ const Orders = () => {
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`max-w-sm w-full bg-white rounded-lg shadow-lg border-l-4 p-4 transform transition-all duration-300 ${
-              toast.type === 'success' ? 'border-l-green-500' :
-              toast.type === 'error' ? 'border-l-red-500' :
-              'border-l-blue-500'
-            }`}
+            className={`max-w-sm w-full bg-white rounded-lg shadow-lg border-l-4 p-4 transform transition-all duration-300 ${toast.type === 'success' ? 'border-l-green-500' :
+                toast.type === 'error' ? 'border-l-red-500' :
+                  'border-l-blue-500'
+              }`}
           >
             <div className="flex items-start">
               <div className="flex-shrink-0">
