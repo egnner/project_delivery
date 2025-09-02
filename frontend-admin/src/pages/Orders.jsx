@@ -233,12 +233,25 @@ const Orders = () => {
     });
 
     newSocket.on('order-updated', (data) => {
-      console.log('Socket: Pedido atualizado:', data.order.id, 'Status:', data.order.order_status);
-      setOrders(prevOrders =>
-        prevOrders.map(order =>
+      console.log('🔌 Socket: Pedido atualizado:', data.order.id, 'Status:', data.order.order_status, 'Payment:', data.order.payment_status);
+      console.log('🔌 Dados completos do pedido:', data.order);
+      
+      setOrders(prevOrders => {
+        const updatedOrders = prevOrders.map(order =>
           order.id === data.order.id ? data.order : order
-        )
-      );
+        );
+        
+        console.log('🔌 Pedidos após atualização:', updatedOrders.length, 'pedidos');
+        
+        // Log específico para pedidos finalizados
+        updatedOrders.forEach(order => {
+          if (order.order_status === 'retirado' || order.order_status === 'finalizado') {
+            console.log(`🔍 Pedido #${order.id} após atualização: Status=${order.order_status}, Finalizado=${isOrderFinished(order)}`);
+          }
+        });
+        
+        return updatedOrders;
+      });
     });
 
     return () => {
@@ -252,16 +265,41 @@ const Orders = () => {
 
   const fetchOrders = async () => {
     try {
+      console.log('📡 Buscando pedidos da API...');
       const response = await api.get('/api/admin/orders');
 
       if (response && response.ok) {
         const data = await response.json();
+        console.log('📦 Pedidos recebidos:', data.data?.length || 0, 'pedidos');
+        
+        // Log dos pedidos com status finalizado/retirado
+        if (data.data) {
+          data.data.forEach(order => {
+            if (order.order_status === 'retirado' || order.order_status === 'finalizado') {
+              console.log(`🔍 Pedido #${order.id}: Status=${order.order_status}, Payment=${order.payment_status}, Finalizado=${isOrderFinished(order)}`);
+            }
+          });
+        }
+        
         setOrders(data.data || []);
+        
+        // Log das estatísticas após atualização
+        setTimeout(() => {
+          const currentStats = {
+            total: data.data?.length || 0,
+            pending: (data.data || []).filter(o => o.payment_status === 'pendente').length,
+            active: (data.data || []).filter(o => !isOrderFinished(o)).length,
+            finished: (data.data || []).filter(o => isOrderFinished(o)).length
+          };
+          console.log('📊 Estatísticas após fetchOrders:', currentStats);
+        }, 100);
+        
       } else if (response && response.error) {
+        console.log('❌ Erro na resposta da API:', response.message);
         showErrorToast(response.message || 'Erro ao carregar pedidos');
       }
     } catch (error) {
-      console.error('Erro ao buscar pedidos:', error);
+      console.error('❌ Erro ao buscar pedidos:', error);
       showErrorToast('Erro ao buscar pedidos');
     } finally {
       setLoading(false);
@@ -270,18 +308,21 @@ const Orders = () => {
 
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
+      console.log('🔄 Atualizando status do pedido:', orderId, 'para:', newStatus);
       const response = await api.put(`/api/admin/orders/${orderId}/status`, { order_status: newStatus });
 
       if (response && response.ok) {
+        console.log('✅ Status atualizado com sucesso, buscando pedidos atualizados...');
         showSuccessToast('Status do pedido atualizado com sucesso!');
         fetchOrders();
         setShowModal(false);
         setSelectedOrder(null);
       } else if (response && response.error) {
+        console.log('❌ Erro na resposta da API:', response.message);
         showErrorToast(response.message || 'Erro ao atualizar status do pedido');
       }
     } catch (error) {
-      console.error('Erro ao atualizar status:', error);
+      console.error('❌ Erro ao atualizar status:', error);
       showErrorToast('Erro ao atualizar status do pedido');
     }
   };

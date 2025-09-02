@@ -55,40 +55,50 @@ const OrderStatus = () => {
     
     if (order.order_status === 'cancelado') return -1;
     
+    let currentStep = 0;
+    
     if (order.delivery_type === 'delivery') {
       switch (order.order_status) {
         case 'novo':
-          return order.payment_status === 'confirmado' ? 1 : 0;
+          currentStep = order.payment_status === 'confirmado' ? 1 : 0;
+          break;
         case 'preparando':
-          return 2;
+          currentStep = 2;
+          break;
         case 'pronto':
         case 'saiu_entrega':
-          return 3;
+          currentStep = 3;
+          break;
         case 'entregue':
         case 'finalizado':
-          return 4;
+          currentStep = 4;
+          break;
         default:
-          return 0;
+          currentStep = 0;
       }
     }
     
     if (order.delivery_type === 'pickup') {
       switch (order.order_status) {
         case 'novo':
-          return order.payment_status === 'confirmado' ? 1 : 0;
+          currentStep = order.payment_status === 'confirmado' ? 1 : 0;
+          break;
         case 'preparando':
-          return 2;
+          currentStep = 2;
+          break;
         case 'pronto_retirada':
-          return 3;
+          currentStep = 3;
+          break;
         case 'retirado':
         case 'finalizado':
-          return 4;
+          currentStep = 4;
+          break;
         default:
-          return 0;
+          currentStep = 0;
       }
     }
     
-    return 0;
+    return currentStep;
   };
 
   const getPaymentMethodInfo = (method) => {
@@ -151,7 +161,6 @@ const OrderStatus = () => {
     newSocket.emit('join-client', id);
 
     newSocket.on('order-status-updated', (data) => {
-      console.log('Status atualizado via WebSocket:', data);
       if (data.order) {
         setOrder(data.order);
         showUpdateNotification(data.order.order_status, order?.order_status);
@@ -159,7 +168,6 @@ const OrderStatus = () => {
     });
 
     newSocket.on('payment-confirmed', (data) => {
-      console.log('Pagamento confirmado via WebSocket:', data);
       if (data.order) {
         setOrder(data.order);
         showUpdateNotification('Pagamento Confirmado', 'Aguardando Pagamento');
@@ -167,7 +175,6 @@ const OrderStatus = () => {
     });
 
     newSocket.on('payment-rejected', (data) => {
-      console.log('Pagamento rejeitado via WebSocket:', data);
       if (data.order) {
         setOrder(data.order);
         showUpdateNotification('Pagamento Rejeitado', 'Aguardando Pagamento');
@@ -191,15 +198,12 @@ const OrderStatus = () => {
           if (data.success && data.data && data.data.order) {
             setOrder(data.data.order);
           } else {
-            console.error('Estrutura de dados inesperada:', data);
             setError('Formato de dados inválido');
           }
         } else {
-          console.error('Erro na resposta:', response.status);
           setError('Pedido não encontrado');
         }
       } catch (error) {
-        console.error('Erro ao buscar pedido:', error);
         setError('Erro ao carregar pedido');
       } finally {
         setLoading(false);
@@ -211,7 +215,7 @@ const OrderStatus = () => {
 
   const showUpdateNotification = (newStatus, oldStatus) => {
     if (newStatus !== oldStatus) {
-      console.log(`Status atualizado: ${oldStatus} → ${newStatus}`);
+      // Status atualizado
     }
   };
 
@@ -221,7 +225,7 @@ const OrderStatus = () => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Erro ao copiar:', err);
+      // Erro ao copiar
     }
   };
 
@@ -367,9 +371,9 @@ const OrderStatus = () => {
                         }`}>
                           {step.label}
                         </h3>
-                        <p className="text-sm text-gray-600">
-                          {isCompleted ? 'Concluído' : isCurrent ? 'Em andamento' : 'Aguardando'}
-                        </p>
+                                                 <p className="text-sm text-gray-600">
+                           {isCompleted ? 'Concluído' : isCurrent ? (currentStep === 4 ? 'Concluído' : 'Em andamento') : 'Aguardando'}
+                         </p>
                       </div>
                     </div>
                   );
@@ -591,9 +595,9 @@ const OrderStatus = () => {
                       }`}>
                         {step.label}
                       </h4>
-                      <p className="text-xs text-gray-600">
-                        {isCompleted ? 'Concluído' : isCurrent ? 'Em andamento' : 'Aguardando'}
-                      </p>
+                                             <p className="text-xs text-gray-600">
+                         {isCompleted ? 'Concluído' : isCurrent ? (currentStep === 4 ? 'Concluído' : 'Em andamento') : 'Aguardando'}
+                       </p>
                     </div>
                   </div>
                 );

@@ -4,10 +4,7 @@ import {
   Edit, 
   Trash2, 
   Search, 
-  Filter,
-  Package,
-  Eye,
-  EyeOff
+  Package
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { api } from '../config/api';
@@ -37,11 +34,12 @@ const Products = () => {
     try {
       setLoading(true);
       
-      // Buscar produtos
-      const productsResponse = await api.get('/api/admin/products');
+      // Buscar TODOS os produtos (sem paginação)
+      const productsResponse = await api.get('/api/admin/products?limit=1000');
       
       if (productsResponse && productsResponse.ok) {
         const productsData = await productsResponse.json();
+        console.log('📦 Produtos carregados:', productsData.data?.length || 0);
         setProducts(productsData.data || []);
       }
 
@@ -167,6 +165,11 @@ const Products = () => {
     resetForm();
   };
 
+  const getCategoryName = (categoryId) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    return category ? category.name : 'Categoria não encontrada';
+  };
+
   const filteredProducts = products.filter(product => {
     const matchesSearch = !searchTerm || 
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -177,11 +180,6 @@ const Products = () => {
     
     return matchesSearch && matchesCategory;
   });
-
-  const getCategoryName = (categoryId) => {
-    const category = categories.find(cat => cat.id === categoryId);
-    return category ? category.name : 'Categoria não encontrada';
-  };
 
   if (loading) {
     return (

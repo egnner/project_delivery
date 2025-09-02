@@ -1,18 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Save, 
-  Upload, 
-  Store, 
-  Clock, 
-  Phone, 
-  MapPin, 
+import {
+  Save,
+  Upload,
+  Store,
+  Clock,
+  Phone,
+  MapPin,
   Image as ImageIcon,
   Truck,
   Search,
   CreditCard,
   Smartphone,
   DollarSign,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Eye,
+  EyeOff,
+  CheckCircle,
+  AlertCircle,
+  Info,
+  X
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useViaCEP } from '../hooks/useViaCEP';
@@ -21,6 +27,7 @@ const Settings = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const { searchCEP, loading: cepLoading, error: cepError, clearError } = useViaCEP();
+  const [activeSection, setActiveSection] = useState('basic');
   const [formData, setFormData] = useState({
     store_name: '',
     store_logo: '',
@@ -64,23 +71,21 @@ const Settings = () => {
   const loadSettings = async () => {
     try {
       setLoading(true);
-      
+
       const response = await fetch('http://localhost:3000/api/admin/settings', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
         }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
-          // Converter valores numéricos para string para os inputs e garantir valores booleanos
           const settings = {
             ...data.data,
             min_order_amount: data.data.min_order_amount?.toString() || '',
             delivery_fee: data.data.delivery_fee?.toString() || '',
             free_delivery_threshold: data.data.free_delivery_threshold?.toString() || '',
-            // Garantir que os valores booleanos sejam booleanos
             payment_dinheiro_enabled: Boolean(data.data.payment_dinheiro_enabled),
             payment_pix_enabled: Boolean(data.data.payment_pix_enabled),
             payment_cartao_enabled: Boolean(data.data.payment_cartao_enabled),
@@ -89,18 +94,12 @@ const Settings = () => {
             pickup_enabled: Boolean(data.data.pickup_enabled),
             show_contact_info: Boolean(data.data.show_contact_info)
           };
-          
-          // Garantir que opening_hours seja um objeto válido
-          console.log('Dados recebidos da API:', data.data);
-          console.log('Tipo de opening_hours:', typeof settings.opening_hours);
-          console.log('Valor de opening_hours:', settings.opening_hours);
-          
+
           if (typeof settings.opening_hours === 'string') {
             try {
               settings.opening_hours = JSON.parse(settings.opening_hours);
             } catch (e) {
               console.error('Erro ao fazer parse dos horários:', e);
-              // Usar horários padrão se der erro
               settings.opening_hours = {
                 monday: { open: '08:00', close: '22:00', closed: false },
                 tuesday: { open: '08:00', close: '22:00', closed: false },
@@ -112,7 +111,7 @@ const Settings = () => {
               };
             }
           }
-          
+
           setFormData(settings);
         }
       } else {
@@ -141,7 +140,6 @@ const Settings = () => {
       [name]: value
     }));
 
-    // Limpar erro do CEP quando o usuário digitar
     if (name === 'zip_code') {
       clearError();
     }
@@ -190,22 +188,21 @@ const Settings = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validar que pelo menos um método de pagamento está selecionado
+
     const selectedPaymentMethods = [
       ...(formData.payment_dinheiro_enabled ? ['dinheiro'] : []),
       ...(formData.payment_pix_enabled ? ['pix'] : []),
       ...(formData.payment_cartao_enabled ? ['cartao'] : [])
     ];
-    
+
     if (selectedPaymentMethods.length === 0) {
       toast.error('Selecione pelo menos uma forma de pagamento');
       return;
     }
-    
+
     try {
       setSaving(true);
-      
+
       const response = await fetch('http://localhost:3000/api/admin/settings', {
         method: 'PUT',
         headers: {
@@ -220,7 +217,7 @@ const Settings = () => {
           payment_methods: selectedPaymentMethods
         })
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -239,557 +236,788 @@ const Settings = () => {
     }
   };
 
+  // Stats calculados
+  const stats = {
+    deliveryMethods: (formData.delivery_enabled ? 1 : 0) + (formData.pickup_enabled ? 1 : 0),
+    paymentMethods: [formData.payment_dinheiro_enabled, formData.payment_pix_enabled, formData.payment_cartao_enabled].filter(Boolean).length,
+    openDays: Object.values(formData.opening_hours).filter(day => !day.closed).length,
+    isComplete: formData.store_name && formData.contact_phone && formData.address && formData.city
+  };
+
+  const sections = [
+    { id: 'basic', label: 'Informações Básicas', icon: Store },
+    { id: 'contact', label: 'Contato & Endereço', icon: Phone },
+    { id: 'hours', label: 'Funcionamento', icon: Clock },
+    { id: 'delivery', label: 'Entrega', icon: Truck },
+    { id: 'payment', label: 'Pagamento', icon: CreditCard },
+  ];
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando configurações...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Configurações da Loja</h1>
-        
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Informações Básicas */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-              <Store className="w-5 h-5 text-primary-600" />
-              Informações Básicas
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nome da Loja *
-                </label>
-                <input
-                  type="text"
-                  name="store_name"
-                  value={formData.store_name}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="Nome da sua loja"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Logo da Loja
-                </label>
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                    {formData.store_logo ? (
-                      <img src={formData.store_logo} alt="Logo" className="w-12 h-12 object-contain" />
-                    ) : (
-                      <ImageIcon className="w-8 h-8 text-gray-400" />
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <Upload className="w-4 h-4" />
-                    Upload Logo
-                  </button>
+    <div className="min-h-screen bg-gray-50">
+      <div className="p-4 lg:p-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
+                Configurações da Loja
+              </h1>
+              <p className="text-gray-600">
+                Configure as informações gerais da sua loja
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {stats.isComplete ? (
+                <div className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg">
+                  <CheckCircle className="w-5 h-5" />
+                  <span className="font-medium">Perfil Completo</span>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Funcionalidade de upload será implementada em breve
-                </p>
+              ) : (
+                <div className="flex items-center gap-2 px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg">
+                  <AlertCircle className="w-5 h-5" />
+                  <span className="font-medium">Configuração Incompleta</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 lg:gap-6 mb-8">
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-green-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{stats.isComplete ? '100%' : '75%'}</p>
+                <p className="text-sm text-gray-600">Perfil Completo</p>
               </div>
             </div>
           </div>
 
-          {/* Informações de Contato */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-              <Phone className="w-5 h-5 text-primary-600" />
-              Informações de Contato
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Telefone *
-                </label>
-                <input
-                  type="tel"
-                  name="contact_phone"
-                  value={formData.contact_phone}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="(11) 99999-9999"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Truck className="w-6 h-6 text-blue-600" />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="contact_email"
-                  value={formData.contact_email}
-                  onChange={handleInputChange}
-                  placeholder="contato@loja.com"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
+                <p className="text-2xl font-bold text-gray-900">{stats.deliveryMethods}</p>
+                <p className="text-sm text-gray-600">Métodos de Entrega</p>
               </div>
             </div>
           </div>
 
-          {/* Endereço da Loja */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-primary-600" />
-              Endereço da Loja
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* CEP com busca automática */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  CEP
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    name="zip_code"
-                    value={formData.zip_code}
-                    onChange={handleAddressChange}
-                    onBlur={handleCEPBlur}
-                    placeholder="00000-000"
-                    className="w-full px-3 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                    {cepLoading ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
-                    ) : (
-                      <MapPin className="w-4 h-4 text-gray-400" />
-                    )}
-                  </div>
-                </div>
-                {cepError && (
-                  <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
-                    <Search className="w-4 h-4" />
-                    {cepError}
-                  </p>
-                )}
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <CreditCard className="w-6 h-6 text-purple-600" />
               </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Endereço Completo *
-                </label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleAddressChange}
-                  required
-                  placeholder="Rua, avenida, etc."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Número *
-                </label>
-                <input
-                  type="text"
-                  name="number"
-                  value={formData.number}
-                  onChange={handleAddressChange}
-                  required
-                  placeholder="123"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Bairro
-                </label>
-                <input
-                  type="text"
-                  name="neighborhood"
-                  value={formData.neighborhood}
-                  onChange={handleAddressChange}
-                  placeholder="Centro"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cidade *
-                </label>
-                <input
-                  type="text"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleAddressChange}
-                  required
-                  placeholder="São Paulo"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Estado *
-                </label>
-                <input
-                  type="text"
-                  name="state"
-                  value={formData.state}
-                  onChange={handleAddressChange}
-                  required
-                  placeholder="SP"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
+                <p className="text-2xl font-bold text-gray-900">{stats.paymentMethods}</p>
+                <p className="text-sm text-gray-600">Formas de Pagamento</p>
               </div>
             </div>
           </div>
 
-          {/* Controles de Visibilidade */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Search className="w-5 h-5 text-primary-600" />
-              Controles de Visibilidade
-            </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Configure quais informações serão exibidas no site público
-            </p>
-            
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="show_contact_info"
-                  name="show_contact_info"
-                  checked={formData.show_contact_info}
-                  onChange={(e) => setFormData(prev => ({ ...prev, show_contact_info: e.target.checked }))}
-                  className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2"
-                />
-                <label htmlFor="show_contact_info" className="text-sm font-medium text-gray-700">
-                  Exibir endereço e dados de contato no menu lateral
-                </label>
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                <Clock className="w-6 h-6 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{stats.openDays}/7</p>
+                <p className="text-sm text-gray-600">Dias de Funcionamento</p>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Horário de Funcionamento */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-primary-600" />
-              Horário de Funcionamento
-            </h2>
-            
-            <div className="space-y-4">
-              {Object.entries(formData.opening_hours).map(([day, hours]) => (
-                <div key={day} className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg">
-                  <div className="w-32">
-                    <span className="font-medium text-gray-700">{getDayLabel(day)}</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={!hours.closed}
-                      onChange={(e) => handleOpeningHoursChange(day, 'closed', !e.target.checked)}
-                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                    />
-                    <span className="text-sm text-gray-600">Aberto</span>
-                  </div>
-                  
-                  {!hours.closed && (
-                    <>
-                      <input
-                        type="time"
-                        value={hours.open}
-                        onChange={(e) => handleOpeningHoursChange(day, 'open', e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                      />
-                      <span className="text-gray-500">às</span>
-                      <input
-                        type="time"
-                        value={hours.close}
-                        onChange={(e) => handleOpeningHoursChange(day, 'close', e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                      />
-                    </>
-                  )}
-                </div>
-              ))}
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Sidebar de Navegação */}
+          <div className="lg:w-80">
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">Seções</h3>
+              <nav className="space-y-2">
+                {sections.map((section) => {
+                  const IconComponent = section.icon;
+                  return (
+                    <button
+                      key={section.id}
+                      onClick={() => setActiveSection(section.id)}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${activeSection === section.id
+                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                          : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                    >
+                      <IconComponent className="w-5 h-5" />
+                      <span className="font-medium">{section.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
             </div>
           </div>
 
-          {/* Configurações de Entrega */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-              <Truck className="w-5 h-5 text-primary-600" />
-              Configurações de Entrega
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Pedido Mínimo (R$)
-                </label>
-                <input
-                  type="number"
-                  name="min_order_amount"
-                  value={formData.min_order_amount}
-                  onChange={handleInputChange}
-                  step="0.01"
-                  min="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
+          {/* Conteúdo Principal */}
+          <div className="flex-1">
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Informações Básicas */}
+              {activeSection === 'basic' && (
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+                    <Store className="w-5 h-5 text-blue-600" />
+                    Informações Básicas
+                  </h2>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Taxa de Entrega (R$)
-                </label>
-                <input
-                  type="number"
-                  name="delivery_fee"
-                  value={formData.delivery_fee}
-                  onChange={handleInputChange}
-                  step="0.01"
-                  min="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Entrega Grátis a partir de (R$)
-                </label>
-                <input
-                  type="number"
-                  name="free_delivery_threshold"
-                  value={formData.free_delivery_threshold}
-                  onChange={handleInputChange}
-                  step="0.01"
-                  min="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            {/* Configurações de Entrega e Retirada */}
-            <div className="mt-6">
-              <h3 className="text-lg font-medium text-gray-800 mb-4">Configurações de Entrega e Retirada</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    name="delivery_enabled"
-                    checked={formData.delivery_enabled}
-                    onChange={(e) => setFormData(prev => ({ ...prev, delivery_enabled: e.target.checked }))}
-                    className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                  />
-                  <label className="ml-2 block text-sm font-medium text-gray-700">
-                    Ativar Entrega
-                  </label>
-                </div>
-                
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    name="pickup_enabled"
-                    checked={formData.pickup_enabled}
-                    onChange={(e) => setFormData(prev => ({ ...prev, pickup_enabled: e.target.checked }))}
-                    className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                  />
-                  <label className="ml-2 block text-sm font-medium text-gray-700">
-                    Ativar Retirada no Balcão
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Informações de Entrega
-              </label>
-              <textarea
-                name="delivery_info"
-                value={formData.delivery_info}
-                onChange={handleInputChange}
-                rows="3"
-                placeholder="Informações sobre prazo de entrega, regiões atendidas, etc."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          {/* Configurações de Pagamento */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-primary-600" />
-              Configurações de Pagamento
-            </h2>
-            
-            <p className="text-sm text-gray-600 mb-6">
-              Configure os métodos de pagamento disponíveis para seus clientes
-            </p>
-
-            {/* Métodos de Pagamento Básicos */}
-            <div className="mb-8">
-              <h3 className="text-lg font-medium text-gray-800 mb-4">Métodos de Pagamento</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Dinheiro */}
-                <div className="flex items-center p-4 border border-gray-200 rounded-lg">
-                  <input
-                    type="checkbox"
-                    id="payment_dinheiro_enabled"
-                    name="payment_dinheiro_enabled"
-                    checked={formData.payment_dinheiro_enabled}
-                    onChange={(e) => setFormData(prev => ({ ...prev, payment_dinheiro_enabled: e.target.checked }))}
-                    className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="payment_dinheiro_enabled" className="ml-3 flex items-center gap-2 cursor-pointer">
-                    <DollarSign className="w-5 h-5 text-green-600" />
-                    <span className="font-medium text-gray-700">Dinheiro</span>
-                  </label>
-                </div>
-
-                {/* PIX */}
-                <div className="flex items-center p-4 border border-gray-200 rounded-lg">
-                  <input
-                    type="checkbox"
-                    id="payment_pix_enabled"
-                    name="payment_pix_enabled"
-                    checked={formData.payment_pix_enabled}
-                    onChange={(e) => setFormData(prev => ({ ...prev, payment_pix_enabled: e.target.checked }))}
-                    className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="payment_pix_enabled" className="ml-3 flex items-center gap-2 cursor-pointer">
-                    <Smartphone className="w-5 h-5 text-green-600" />
-                    <span className="font-medium text-gray-700">PIX</span>
-                  </label>
-                </div>
-
-                {/* Cartão */}
-                <div className="flex items-center p-4 border border-gray-200 rounded-lg">
-                  <input
-                    type="checkbox"
-                    id="payment_cartao_enabled"
-                    name="payment_cartao_enabled"
-                    checked={formData.payment_cartao_enabled}
-                    onChange={(e) => setFormData(prev => ({ ...prev, payment_cartao_enabled: e.target.checked }))}
-                    className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="payment_cartao_enabled" className="ml-3 flex items-center gap-2 cursor-pointer">
-                    <CreditCard className="w-5 h-5 text-blue-600" />
-                    <span className="font-medium text-gray-700">Cartão</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Gateway de Pagamento */}
-            <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-800 mb-4">Gateway de Pagamento (Futuro)</h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="payment_gateway_enabled"
-                    name="payment_gateway_enabled"
-                    checked={formData.payment_gateway_enabled}
-                    onChange={(e) => setFormData(prev => ({ ...prev, payment_gateway_enabled: e.target.checked }))}
-                    className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="payment_gateway_enabled" className="ml-2 block text-sm font-medium text-gray-700">
-                    Ativar integração com gateway de pagamento
-                  </label>
-                </div>
-
-                {formData.payment_gateway_enabled && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-6">
+                  <div className="space-y-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Provedor do Gateway
+                        Nome da Loja *
                       </label>
-                      <select
-                        name="payment_gateway_provider"
-                        value={formData.payment_gateway_provider}
+                      <input
+                        type="text"
+                        name="store_name"
+                        value={formData.store_name}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                      >
-                        <option value="">Selecione um provedor</option>
-                        <option value="mercadopago">Mercado Pago</option>
-                        <option value="stripe">Stripe</option>
-                        <option value="paypal">PayPal</option>
-                        <option value="pagseguro">PagSeguro</option>
-                        <option value="asaas">Asaas</option>
-                      </select>
+                        required
+                        placeholder="Nome da sua loja"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                      />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Credenciais (JSON)
+                        Logo da Loja
+                      </label>
+                      <div className="flex items-center gap-6">
+                        <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center">
+                          {formData.store_logo ? (
+                            <img src={formData.store_logo} alt="Logo" className="w-16 h-16 object-contain rounded-lg" />
+                          ) : (
+                            <ImageIcon className="w-10 h-10 text-gray-400" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <button
+                            type="button"
+                            className="flex items-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors text-gray-600 hover:text-blue-600"
+                          >
+                            <Upload className="w-5 h-5" />
+                            Upload Logo
+                          </button>
+                          <p className="text-xs text-gray-500 mt-2">
+                            Recomendado: 200x200px, PNG ou JPG
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <Info className="w-5 h-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <h4 className="text-sm font-medium text-blue-900">Sobre as Informações Básicas</h4>
+                        <p className="text-sm text-blue-700 mt-1">
+                          O nome da sua loja aparecerá no topo do cardápio e será usado para identificar seu negócio. O logo será exibido junto ao nome.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Informações de Contato e Endereço */}
+              {activeSection === 'contact' && (
+                <div className="space-y-8">
+                  <div className="bg-white border border-gray-200 rounded-lg p-6">
+                    <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+                      <Phone className="w-5 h-5 text-blue-600" />
+                      Informações de Contato
+                    </h2>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Telefone *
+                        </label>
+                        <input
+                          type="tel"
+                          name="contact_phone"
+                          value={formData.contact_phone}
+                          onChange={handleInputChange}
+                          required
+                          placeholder="(11) 99999-9999"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Email
+                        </label>
+                        <input
+                          type="email"
+                          name="contact_email"
+                          value={formData.contact_email}
+                          onChange={handleInputChange}
+                          placeholder="contato@loja.com"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-6">
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          id="show_contact_info"
+                          name="show_contact_info"
+                          checked={formData.show_contact_info}
+                          onChange={(e) => setFormData(prev => ({ ...prev, show_contact_info: e.target.checked }))}
+                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                        />
+                        <label htmlFor="show_contact_info" className="text-sm font-medium text-gray-700">
+                          Exibir informações de contato no menu lateral
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white border border-gray-200 rounded-lg p-6">
+                    <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+                      <MapPin className="w-5 h-5 text-blue-600" />
+                      Endereço da Loja
+                    </h2>
+
+                    <div className="space-y-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          CEP
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            name="zip_code"
+                            value={formData.zip_code}
+                            onChange={handleAddressChange}
+                            onBlur={handleCEPBlur}
+                            placeholder="00000-000"
+                            className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                          />
+                          <div className="absolute inset-y-0 right-0 flex items-center pr-4">
+                            {cepLoading ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                            ) : (
+                              <MapPin className="w-4 h-4 text-gray-400" />
+                            )}
+                          </div>
+                        </div>
+                        {cepError && (
+                          <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
+                            <Search className="w-4 h-4" />
+                            {cepError}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div className="md:col-span-3">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Endereço Completo *
+                          </label>
+                          <input
+                            type="text"
+                            name="address"
+                            value={formData.address}
+                            onChange={handleAddressChange}
+                            required
+                            placeholder="Rua, avenida, etc."
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Número *
+                          </label>
+                          <input
+                            type="text"
+                            name="number"
+                            value={formData.number}
+                            onChange={handleAddressChange}
+                            required
+                            placeholder="123"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Bairro
+                          </label>
+                          <input
+                            type="text"
+                            name="neighborhood"
+                            value={formData.neighborhood}
+                            onChange={handleAddressChange}
+                            placeholder="Centro"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Cidade *
+                          </label>
+                          <input
+                            type="text"
+                            name="city"
+                            value={formData.city}
+                            onChange={handleAddressChange}
+                            required
+                            placeholder="São Paulo"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Estado *
+                          </label>
+                          <input
+                            type="text"
+                            name="state"
+                            value={formData.state}
+                            onChange={handleAddressChange}
+                            required
+                            placeholder="SP"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Horário de Funcionamento */}
+              {activeSection === 'hours' && (
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-blue-600" />
+                    Horário de Funcionamento
+                  </h2>
+
+                  <div className="space-y-4">
+                    {Object.entries(formData.opening_hours).map(([day, hours]) => (
+                      <div key={day} className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
+                        <div className="w-32">
+                          <span className="font-medium text-gray-700">{getDayLabel(day)}</span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={!hours.closed}
+                            onChange={(e) => handleOpeningHoursChange(day, 'closed', !e.target.checked)}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                          <span className="text-sm text-gray-600">Aberto</span>
+                        </div>
+
+                        {!hours.closed && (
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="time"
+                              value={hours.open}
+                              onChange={(e) => handleOpeningHoursChange(day, 'open', e.target.value)}
+                              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                            />
+                            <span className="text-gray-500">às</span>
+                            <input
+                              type="time"
+                              value={hours.close}
+                              onChange={(e) => handleOpeningHoursChange(day, 'close', e.target.value)}
+                              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <Info className="w-5 h-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <h4 className="text-sm font-medium text-blue-900">Sobre os Horários</h4>
+                        <p className="text-sm text-blue-700 mt-1">
+                          Os horários de funcionamento são exibidos no cardápio e utilizados para controlar quando os pedidos podem ser feitos.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Configurações de Entrega */}
+              {activeSection === 'delivery' && (
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+                    <Truck className="w-5 h-5 text-blue-600" />
+                    Configurações de Entrega
+                  </h2>
+
+                  <div className="space-y-8">
+                    {/* Tipos de Entrega */}
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-4">Métodos Disponíveis</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="flex items-start p-4 border border-gray-200 rounded-lg hover:border-blue-200 transition-colors">
+                          <input
+                            type="checkbox"
+                            name="delivery_enabled"
+                            checked={formData.delivery_enabled}
+                            onChange={(e) => setFormData(prev => ({ ...prev, delivery_enabled: e.target.checked }))}
+                            className="mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                          <div className="ml-4 flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Truck className="w-5 h-5 text-blue-600" />
+                              <label className="text-sm font-medium text-gray-900">
+                                Entrega em Domicílio
+                              </label>
+                            </div>
+                            <p className="text-sm text-gray-600">
+                              Permite que os clientes recebam os pedidos em casa
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start p-4 border border-gray-200 rounded-lg hover:border-blue-200 transition-colors">
+                          <input
+                            type="checkbox"
+                            name="pickup_enabled"
+                            checked={formData.pickup_enabled}
+                            onChange={(e) => setFormData(prev => ({ ...prev, pickup_enabled: e.target.checked }))}
+                            className="mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                          <div className="ml-4 flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Store className="w-5 h-5 text-green-600" />
+                              <label className="text-sm font-medium text-gray-900">
+                                Retirada no Balcão
+                              </label>
+                            </div>
+                            <p className="text-sm text-gray-600">
+                              Clientes podem buscar os pedidos na loja
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Valores de Entrega */}
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-4">Valores e Limites</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Pedido Mínimo (R$)
+                          </label>
+                          <input
+                            type="number"
+                            name="min_order_amount"
+                            value={formData.min_order_amount}
+                            onChange={handleInputChange}
+                            step="0.01"
+                            min="0"
+                            placeholder="0.00"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Valor mínimo para fazer pedidos</p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Taxa de Entrega (R$)
+                          </label>
+                          <input
+                            type="number"
+                            name="delivery_fee"
+                            value={formData.delivery_fee}
+                            onChange={handleInputChange}
+                            step="0.01"
+                            min="0"
+                            placeholder="0.00"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Valor cobrado pela entrega</p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Entrega Grátis a partir de (R$)
+                          </label>
+                          <input
+                            type="number"
+                            name="free_delivery_threshold"
+                            value={formData.free_delivery_threshold}
+                            onChange={handleInputChange}
+                            step="0.01"
+                            min="0"
+                            placeholder="0.00"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Valor para isentar taxa de entrega</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Informações de Entrega */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Informações Adicionais sobre Entrega
                       </label>
                       <textarea
-                        name="payment_gateway_credentials"
-                        value={formData.payment_gateway_credentials}
+                        name="delivery_info"
+                        value={formData.delivery_info}
                         onChange={handleInputChange}
-                        rows="3"
-                        placeholder='{"api_key": "sua_chave_aqui", "secret_key": "sua_chave_secreta"}'
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        rows="4"
+                        placeholder="Ex: Entregamos de segunda a domingo. Tempo estimado: 30-45 minutos. Atendemos um raio de 5km da loja."
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                       />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Estas informações aparecerão no cardápio para orientar os clientes
+                      </p>
                     </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
-              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <SettingsIcon className="w-5 h-5 text-blue-600 mt-0.5" />
-                  <div>
-                    <h4 className="text-sm font-medium text-blue-900">Integração Futura</h4>
-                    <p className="text-sm text-blue-700 mt-1">
-                      Esta funcionalidade permitirá integração com gateways de pagamento para processamento automático de PIX e cartão de crédito/débito.
-                    </p>
+              {/* Configurações de Pagamento */}
+              {activeSection === 'payment' && (
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+                    <CreditCard className="w-5 h-5 text-blue-600" />
+                    Configurações de Pagamento
+                  </h2>
+
+                  <div className="space-y-8">
+                    {/* Métodos de Pagamento Básicos */}
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-4">Métodos de Pagamento</h3>
+                      <p className="text-sm text-gray-600 mb-6">
+                        Selecione as formas de pagamento que sua loja aceita
+                      </p>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* Dinheiro */}
+                        <div className="flex items-start p-4 border border-gray-200 rounded-lg hover:border-green-200 transition-colors">
+                          <input
+                            type="checkbox"
+                            id="payment_dinheiro_enabled"
+                            name="payment_dinheiro_enabled"
+                            checked={formData.payment_dinheiro_enabled}
+                            onChange={(e) => setFormData(prev => ({ ...prev, payment_dinheiro_enabled: e.target.checked }))}
+                            className="mt-1 w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                          />
+                          <div className="ml-4 flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <DollarSign className="w-5 h-5 text-green-600" />
+                              <label htmlFor="payment_dinheiro_enabled" className="text-sm font-medium text-gray-900 cursor-pointer">
+                                Dinheiro
+                              </label>
+                            </div>
+                            <p className="text-sm text-gray-600">
+                              Pagamento em dinheiro na entrega ou retirada
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* PIX */}
+                        <div className="flex items-start p-4 border border-gray-200 rounded-lg hover:border-green-200 transition-colors">
+                          <input
+                            type="checkbox"
+                            id="payment_pix_enabled"
+                            name="payment_pix_enabled"
+                            checked={formData.payment_pix_enabled}
+                            onChange={(e) => setFormData(prev => ({ ...prev, payment_pix_enabled: e.target.checked }))}
+                            className="mt-1 w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                          />
+                          <div className="ml-4 flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Smartphone className="w-5 h-5 text-green-600" />
+                              <label htmlFor="payment_pix_enabled" className="text-sm font-medium text-gray-900 cursor-pointer">
+                                PIX
+                              </label>
+                            </div>
+                            <p className="text-sm text-gray-600">
+                              Transferência instantânea via PIX
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Cartão */}
+                        <div className="flex items-start p-4 border border-gray-200 rounded-lg hover:border-blue-200 transition-colors">
+                          <input
+                            type="checkbox"
+                            id="payment_cartao_enabled"
+                            name="payment_cartao_enabled"
+                            checked={formData.payment_cartao_enabled}
+                            onChange={(e) => setFormData(prev => ({ ...prev, payment_cartao_enabled: e.target.checked }))}
+                            className="mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                          <div className="ml-4 flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <CreditCard className="w-5 h-5 text-blue-600" />
+                              <label htmlFor="payment_cartao_enabled" className="text-sm font-medium text-gray-900 cursor-pointer">
+                                Cartão
+                              </label>
+                            </div>
+                            <p className="text-sm text-gray-600">
+                              Cartão de crédito ou débito
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Gateway de Pagamento */}
+                    <div className="border-t border-gray-200 pt-8">
+                      <div className="flex items-center gap-3 mb-4">
+                        <SettingsIcon className="w-5 h-5 text-purple-600" />
+                        <h3 className="text-lg font-medium text-gray-900">Gateway de Pagamento</h3>
+                        <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">
+                          Futuro
+                        </span>
+                      </div>
+
+                      <div className="space-y-6">
+                        <div className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            id="payment_gateway_enabled"
+                            name="payment_gateway_enabled"
+                            checked={formData.payment_gateway_enabled}
+                            onChange={(e) => setFormData(prev => ({ ...prev, payment_gateway_enabled: e.target.checked }))}
+                            className="mt-1 w-4 h-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                          />
+                          <div className="flex-1">
+                            <label htmlFor="payment_gateway_enabled" className="text-sm font-medium text-gray-900">
+                              Ativar integração com gateway de pagamento
+                            </label>
+                            <p className="text-sm text-gray-600 mt-1">
+                              Processa pagamentos PIX e cartão automaticamente
+                            </p>
+                          </div>
+                        </div>
+
+                        {formData.payment_gateway_enabled && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 ml-7 p-4 bg-gray-50 rounded-lg">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Provedor do Gateway
+                              </label>
+                              <select
+                                name="payment_gateway_provider"
+                                value={formData.payment_gateway_provider}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors bg-white"
+                              >
+                                <option value="">Selecione um provedor</option>
+                                <option value="mercadopago">Mercado Pago</option>
+                                <option value="stripe">Stripe</option>
+                                <option value="paypal">PayPal</option>
+                                <option value="pagseguro">PagSeguro</option>
+                                <option value="asaas">Asaas</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Credenciais (JSON)
+                              </label>
+                              <textarea
+                                name="payment_gateway_credentials"
+                                value={formData.payment_gateway_credentials}
+                                onChange={handleInputChange}
+                                rows="3"
+                                placeholder='{"api_key": "sua_chave_aqui"}'
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors"
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                          <div className="flex items-start gap-3">
+                            <Info className="w-5 h-5 text-purple-600 mt-0.5" />
+                            <div>
+                              <h4 className="text-sm font-medium text-purple-900">Integração Futura</h4>
+                              <p className="text-sm text-purple-700 mt-1">
+                                Esta funcionalidade permitirá integração com gateways de pagamento para processamento automático de PIX e cartão de crédito/débito, com confirmação instantânea de pagamentos.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Aviso sobre métodos de pagamento */}
+                    {!formData.payment_dinheiro_enabled && !formData.payment_pix_enabled && !formData.payment_cartao_enabled && (
+                      <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+                          <div>
+                            <h4 className="text-sm font-medium text-red-900">Atenção</h4>
+                            <p className="text-sm text-red-700 mt-1">
+                              Você deve selecionar pelo menos uma forma de pagamento para que os clientes possam finalizar seus pedidos.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Botão Salvar */}
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={saving}
-              className="bg-primary-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {saving ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  Salvando...
-                </>
-              ) : (
-                <>
-                  <Save className="w-5 h-5" />
-                  Salvar Configurações
-                </>
               )}
-            </button>
+
+              {/* Botão Salvar */}
+              <div className="mt-8 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="bg-blue-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {saving ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      Salvando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-5 h-5" />
+                      Salvar Configurações
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
