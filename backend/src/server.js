@@ -20,7 +20,12 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: ["http://localhost:3001", "http://localhost:3002"],
+    origin: [
+      "http://localhost:3001", 
+      "http://localhost:3002",
+      "https://*.vercel.app",
+      "https://*.vercel.app/*"
+    ],
     methods: ["GET", "POST"]
   }
 });
@@ -30,7 +35,12 @@ const PORT = process.env.PORT || 3000;
 // Middlewares
 app.use(helmet());
 app.use(cors({
-  origin: ["http://localhost:3001", "http://localhost:3002"],
+  origin: [
+    "http://localhost:3001", 
+    "http://localhost:3002",
+    "https://*.vercel.app",
+    "https://*.vercel.app/*"
+  ],
   credentials: true
 }));
 app.use(morgan('combined'));
