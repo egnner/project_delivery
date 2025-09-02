@@ -1,0 +1,8 @@
+# Ignorar frontends no deploy do Railway
+frontend-admin/
+frontend-client/
+node_modules/
+*.log
+.env
+.env.local
+.env.production
