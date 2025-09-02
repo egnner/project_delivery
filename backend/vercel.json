@@ -20,5 +20,6 @@
     "src/server.js": {
       "maxDuration": 30
     }
-  }
+  },
+  "comment": "Configuração para corrigir roteamento no Vercel"
 }
